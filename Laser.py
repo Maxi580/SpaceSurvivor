@@ -1,16 +1,18 @@
 class Laser:
     def __init__(self, x: float, y: float, width: float, height: float):
-        self.x = x + width * 0.4
-        self.y = y
         self.height = height * 0.5
         self.width = width * 0.2
+        self.x = x + width * 0.5 - self.width * 0.5
+        self.y = y
 
         self.velocity = 14
+        self.damage = 50
+        self.collided = False
 
     def update_laser_coordinates(self):
         self.y -= self.velocity
 
-    def outside_screen(self) -> bool:
+    def above_screen(self) -> bool:
         if self.y + self.height < 0:
             return True
         else:
