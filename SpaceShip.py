@@ -5,6 +5,7 @@ from Laser import Laser
 from enum import Enum, auto
 
 VELOCITY = 7
+LASER_VELOCITY = 14
 
 
 class SpaceShip:
@@ -13,16 +14,18 @@ class SpaceShip:
         self.height = height * 0.1
         self.x = width * 0.5 - self.width * 0.5
         self.y = height * 0.8
+        self.picture = surface
         self.surface = pygame.mask.from_surface(surface)
 
         self.velocity = VELOCITY
+        self.laser_velocity = LASER_VELOCITY
         self.hp = 100
         self.movement_directions = {"left": False, "right": False, "up": False, "down": False}
 
     def update_space_ship_coordinates(self, screen_width: int, screen_height: int):
         movement_count = sum(self.movement_directions.values())
         if movement_count == 2:
-            velocity = 0.5 * self.velocity
+            velocity = 4.94975
         else:
             velocity = self.velocity
         if self.movement_directions.get("left"):
@@ -76,7 +79,7 @@ class SpaceShip:
         self.hp -= damage
 
     def shoot(self, surface):
-        return Laser(self.x, self.y, self.width, self.height, surface)
+        return Laser(self.x, self.y, self.width, self.height, (0, LASER_VELOCITY), surface)
 
     def adjust_size_to_window_resize(self, old_window_width: int, old_window_height: int,
                                      new_window_width: int, new_window_height: int):
