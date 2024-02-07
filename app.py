@@ -89,6 +89,9 @@ class App:
 
     def update_screen_size(self, width, height):
         self.spaceship.adjust_size_to_window_resize(self.screen_width, self.screen_height, width, height)
+        for alien in self.aliens:
+            alien.adjust_size_to_window_resize(self.screen_width, self.screen_height, width, height)
+
         for laser in self.lasers:
             laser.adjust_size_to_window_resize(self.screen_width, self.screen_height, width, height,
                                                self.spaceship.width, self.spaceship.height)
@@ -156,9 +159,11 @@ class App:
         y = self.screen_height * 0.1
         self.aliens.append(Alien(0, y, self.screen_width, self.screen_height,
                                  self.images["alien_spaceship"]))
-        self.aliens.append(Alien(self.screen_width * 0.3, y, self.screen_width,
+        self.aliens.append(Alien(self.screen_width * 0.25, y, self.screen_width,
                                  self.screen_height, self.images["alien_spaceship"]))
-        self.aliens.append(Alien(self.screen_width * 0.6, y, self.screen_width,
+        self.aliens.append(Alien(self.screen_width * 0.5, y, self.screen_width,
+                                 self.screen_height, self.images["alien_spaceship"]))
+        self.aliens.append(Alien(self.screen_width * 0.75, y, self.screen_width,
                                  self.screen_height, self.images["alien_spaceship"]))
         self.aliens.append(Alien(self.screen_width, y, self.screen_width, self.screen_height,
                                  self.images["alien_spaceship"]))
@@ -186,7 +191,9 @@ class App:
             offset_x = self.spaceship.x - collider.x
             offset_y = self.spaceship.y - collider.y
             if collider.surface.overlap(self.spaceship.surface, (offset_x, offset_y)):
-                self.spaceship.hp -= collider.damage
+                if not self.spaceship.immune:
+                    self.spaceship.hp -= collider.damage
+                    self.spaceship.set_immune()
                 self.trigger_explosion(self.spaceship.x, self.spaceship.y, self.spaceship.width, self.spaceship.height)
                 if isinstance(collider, Laser):
                     collider.collided = True
@@ -238,6 +245,10 @@ class App:
                 if explosion.adjust_stage_to_age() and explosion.stage <= 8:
                     explosion.adjust_picture_to_stage(self.images['explosion' + str(explosion.stage)])
             self.explosions = [explosion for explosion in self.explosions if explosion.stage <= 8]
+
+            if self.spaceship.immune:
+                self.spaceship.increase_immune_counter()
+            self.spaceship.reset_immune()
 
             self.eliminate_player()
             self.score += 0.2

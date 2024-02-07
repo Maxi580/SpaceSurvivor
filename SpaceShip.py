@@ -21,6 +21,8 @@ class SpaceShip:
         self.laser_velocity = LASER_VELOCITY
         self.hp = 100
         self.movement_directions = {"left": False, "right": False, "up": False, "down": False}
+        self.immune = False
+        self.immune_counter = 0
 
     def update_space_ship_coordinates(self, screen_width: int, screen_height: int):
         movement_count = sum(self.movement_directions.values())
@@ -89,4 +91,13 @@ class SpaceShip:
         self.width = new_window_width * 0.1
         self.height = new_window_height * 0.1
 
+    def set_immune(self):
+        self.immune = True
 
+    def reset_immune(self):
+        if self.immune_counter > 100:
+            self.immune = False
+            self.immune_counter = 0
+
+    def increase_immune_counter(self):
+        self.immune_counter += 1

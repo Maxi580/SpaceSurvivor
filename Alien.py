@@ -57,3 +57,11 @@ class Alien:
             return x - (self.width * 0.5)
         else:
             return x - self.width
+
+    def adjust_size_to_window_resize(self, old_window_width: int, old_window_height: int,
+                                     new_window_width: int, new_window_height: int):
+        self.x = (self.x / old_window_width) * new_window_width
+        self.y = (self.y / old_window_height) * new_window_height
+
+        self.width = new_window_width * 0.1
+        self.height = new_window_height * 0.1
