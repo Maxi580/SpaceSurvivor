@@ -7,10 +7,10 @@ VELOCITY = 7
 
 
 class Alien:
-    def __init__(self, x: float, y: float, width: float, height: float, surface: Surface):
-        self.width = width * 0.1
-        self.height = height * 0.1
-        self.x = min(abs(x - self.width), x)
+    def __init__(self, x: float, y: float, screen_width: float, screen_height: float, surface: Surface):
+        self.width = screen_width * 0.1
+        self.height = screen_height * 0.1
+        self.x = self.assign_x_value(x, screen_width)
         self.y = y
         self.picture = surface
         self.surface = pygame.mask.from_surface(surface)
@@ -37,17 +37,23 @@ class Alien:
 
         x_size_relative_to_y = (x_difference / y_difference)
 
-        right_side_of_pythagoras = (self.shot_velocity**2) / (x_size_relative_to_y**2 + 1)
+        right_side_of_pythagoras = (self.shot_velocity ** 2) / (x_size_relative_to_y ** 2 + 1)
         if y_difference > 0:
             y_velocity = -sqrt(right_side_of_pythagoras)
         else:
             y_velocity = sqrt(right_side_of_pythagoras)
 
         if x_difference > 0:
-            x_velocity = sqrt((self.shot_velocity**2) - y_velocity**2)
+            x_velocity = sqrt((self.shot_velocity ** 2) - y_velocity ** 2)
         else:
-            x_velocity = -sqrt((self.shot_velocity**2) - y_velocity ** 2)
+            x_velocity = -sqrt((self.shot_velocity ** 2) - y_velocity ** 2)
 
-        print(x_velocity, y_velocity, (x_velocity**2 + y_velocity**2))
         return x_velocity, y_velocity
 
+    def assign_x_value(self, x: float, screen_width: float) -> float:
+        if x == 0:
+            return 0
+        elif x < screen_width:
+            return x - (self.width * 0.5)
+        else:
+            return x - self.width

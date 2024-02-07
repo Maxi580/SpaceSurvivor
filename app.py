@@ -3,8 +3,6 @@ from enum import Enum, auto
 
 import pygame
 import pygame.freetype
-from pygame import Rect
-from pygame.rect import RectType
 from win32api import GetSystemMetrics
 
 from Alien import Alien
@@ -17,6 +15,7 @@ from SpaceShip import SpaceShip
 class GamePhase(Enum):
     ROCKS = auto()
     ALIENS = auto()
+    BASE = auto()
 
 
 def blend_color(color1, color2, blend_factor):
@@ -114,11 +113,6 @@ class App:
         self.explosions.append(Explosion(space_ship_x, space_ship_y, space_ship_width, space_ship_height,
                                          self.images['explosion1']))
 
-    def draw_explosions(self):
-        for explosion in self.explosions:
-            scaled_rock_picture = pygame.transform.scale(explosion.picture, (explosion.width, explosion.height))
-            self.screen.blit(scaled_rock_picture, (explosion.x, explosion.y))
-
     def create_rock(self, x, size):
         surfaces = [self.images["smallRock100HP"], self.images["middleRock200HP"], self.images["bigRock300HP"]]
         return Rock(x, self.screen_width, self.screen_height, size, surfaces[size - 1])
@@ -137,12 +131,6 @@ class App:
         else:
             self.rock_spawn_probability += self.rock_spawn_increment_probability
 
-    def draw_rocks(self):
-        for rock in self.rocks:
-            scaled_rock_picture = pygame.transform.scale(rock.picture, (rock.width, rock.height))
-            rock.surface = pygame.mask.from_surface(scaled_rock_picture)
-            self.screen.blit(scaled_rock_picture, (rock.x, rock.y))
-
     def eliminate_rocks(self):
         i = 0
         while i < len(self.rocks):
@@ -151,20 +139,12 @@ class App:
             else:
                 i += 1
 
-    def draw_space_ship(self):
-        scaled_spaceship_picture = pygame.transform.scale(self.spaceship.picture,
-                                                          (self.spaceship.width, self.spaceship.height))
-        self.spaceship.surface = pygame.mask.from_surface(scaled_spaceship_picture)
-        self.screen.blit(scaled_spaceship_picture, (self.spaceship.x, self.spaceship.y))
-
-    def spaceship_rock_collisions(self):
-        for rock in self.rocks:
-            offset_x = self.spaceship.x - rock.x
-            offset_y = self.spaceship.y - rock.y
-            if rock.surface.overlap(self.spaceship.surface, (offset_x, offset_y)):
-                self.spaceship.hp -= rock.damage
-                self.trigger_explosion(self.spaceship.x, self.spaceship.y, self.spaceship.width, self.spaceship.height)
-                rock.hp = 0
+    def draw_object(self, draw_object):
+        scaled_object_picture = pygame.transform.scale(draw_object.picture, (draw_object.width, draw_object.height))
+        if isinstance(draw_object, SpaceShip) or isinstance(draw_object, Rock) or isinstance(draw_object, Laser) \
+                or isinstance(draw_object, Alien):
+            draw_object.surface = pygame.mask.from_surface(scaled_object_picture)
+        self.screen.blit(scaled_object_picture, (draw_object.x, draw_object.y))
 
     def eliminate_player(self):
         if self.spaceship.hp <= 0:
@@ -172,38 +152,16 @@ class App:
             self.running = False
             pygame.quit()
 
-    def draw_lasers(self):
-        for laser in self.lasers:
-            scaled_spaceship_picture = pygame.transform.scale(laser.picture,
-                                                              (laser.width, laser.height))
-            self.screen.blit(scaled_spaceship_picture, (laser.x, laser.y))
-
-    def laser_rock_collisions(self):
-        for laser in self.lasers:
-            for rock in self.rocks:
-                offset_x = laser.x - rock.x
-                offset_y = laser.y - rock.y
-                if rock.surface.overlap(laser.surface, (offset_x, offset_y)):
-                    laser.collided = True
-                    rock.hp -= laser.damage
-                    if rock.size == 2:
-                        rock.update_middle_surface(self.images["middleRock100HP"])
-                    elif rock.size == 3:
-                        rock.update_big_surface(self.images["bigRock100HP"], self.images["bigRock200HP"])
-
     def spawn_aliens(self):
-        self.aliens.append(Alien(0, self.screen_height * 0.2, self.screen_width, self.screen_height,
+        y = self.screen_height * 0.1
+        self.aliens.append(Alien(0, y, self.screen_width, self.screen_height,
                                  self.images["alien_spaceship"]))
-        self.aliens.append(Alien(self.screen_width * 0.5, self.screen_height * 0.2, self.screen_width,
+        self.aliens.append(Alien(self.screen_width * 0.3, y, self.screen_width,
                                  self.screen_height, self.images["alien_spaceship"]))
-        self.aliens.append(Alien(self.screen_width, self.screen_height * 0.2, self.screen_width, self.screen_height,
+        self.aliens.append(Alien(self.screen_width * 0.6, y, self.screen_width,
+                                 self.screen_height, self.images["alien_spaceship"]))
+        self.aliens.append(Alien(self.screen_width, y, self.screen_width, self.screen_height,
                                  self.images["alien_spaceship"]))
-
-    def draw_aliens(self):
-        for alien in self.aliens:
-            scaled_alien_picture = pygame.transform.scale(alien.picture, (alien.width, alien.height))
-            alien.surface = pygame.mask.from_surface(scaled_alien_picture)
-            self.screen.blit(scaled_alien_picture, (alien.x, alien.y))
 
     def eliminate_aliens(self):
         for alien in self.aliens:
@@ -216,41 +174,46 @@ class App:
             else:
                 i += 1
 
-    def laser_alien_collisions(self):
-        for laser in self.lasers:
-            for alien in self.aliens:
-                offset_x = laser.x - alien.x
-                offset_y = laser.y - alien.y
-                if alien.surface.overlap(laser.surface, (offset_x, offset_y)):
-                    laser.collided = True
-                    alien.hp -= laser.damage
-
     def alien_shoot(self):
         for alien in self.aliens:
-            if random.random() < 0.03:
+            if random.random() < 0.035:
                 self.alien_lasers.append(Laser(alien.x, alien.y, alien.width, alien.height,
                                                alien.calculate_shot_velocity(self.spaceship.x, self.spaceship.y),
                                                self.images['alien_laser']))
 
-    def draw_alien_lasers(self):
-        for laser in self.alien_lasers:
-            scaled_alien_laser_picture = pygame.transform.scale(laser.picture, (laser.width, laser.height))
-            rotated_alien_laser_picture = pygame.transform.rotate(scaled_alien_laser_picture,
-                                                                  laser.velocity[0] / laser.velocity[1])
-            laser.surface = pygame.mask.from_surface(rotated_alien_laser_picture)
-            self.screen.blit(rotated_alien_laser_picture, (laser.x, laser.y))
-
-    def space_ship_alien_laser_collision(self):
-        for alien_laser in self.alien_lasers:
-            offset_x = self.spaceship.x - alien_laser.x
-            offset_y = self.spaceship.y - alien_laser.y
-            if alien_laser.surface.overlap(self.spaceship.surface, (offset_x, offset_y)):
-                self.spaceship.hp -= alien_laser.damage
+    def space_ship_collisions(self, colliders):
+        for collider in colliders:
+            offset_x = self.spaceship.x - collider.x
+            offset_y = self.spaceship.y - collider.y
+            if collider.surface.overlap(self.spaceship.surface, (offset_x, offset_y)):
+                self.spaceship.hp -= collider.damage
                 self.trigger_explosion(self.spaceship.x, self.spaceship.y, self.spaceship.width, self.spaceship.height)
-                alien_laser.collided = True
+                if isinstance(collider, Laser):
+                    collider.collided = True
+                elif isinstance(collider, Rock):
+                    self.trigger_explosion(self.spaceship.x, self.spaceship.y, self.spaceship.width,
+                                           self.spaceship.height)
+                    collider.hp = 0
+
+    def non_space_ship_collisions(self, colliders1, colliders2):
+        for collider1 in colliders1:
+            for collider2 in colliders2:
+                offset_x = collider1.x - collider2.x
+                offset_y = collider1.y - collider2.y
+                if collider2.surface.overlap(collider1.surface, (offset_x, offset_y)):
+                    if isinstance(collider1, Laser) and isinstance(collider2, Alien):
+                        collider1.collided = True
+                        collider2.hp -= collider1.damage
+                    if isinstance(collider1, Laser) and isinstance(collider2, Rock):
+                        collider1.collided = True
+                        collider2.hp -= collider1.damage
+                        if collider2.size == 2:
+                            collider2.update_middle_surface(self.images["middleRock100HP"])
+                        elif collider2.size == 3:
+                            collider2.update_big_surface(self.images["bigRock100HP"], self.images["bigRock200HP"])
 
     def adjust_game_phase(self):
-        if self.score >= self.end_of_first_phase:
+        if self.game_phase == GamePhase.ROCKS and self.score >= self.end_of_first_phase:
             self.game_phase = GamePhase.ALIENS
 
     def run(self):
@@ -258,17 +221,17 @@ class App:
             self.clock.tick(30)
 
             if len(self.rocks) > 0:
-                self.laser_rock_collisions()
+                self.non_space_ship_collisions(self.lasers, self.rocks)
                 self.eliminate_rocks()
-                self.spaceship_rock_collisions()
+                self.space_ship_collisions(self.rocks)
 
             if len(self.aliens) > 0:
-                self.laser_alien_collisions()
+                self.non_space_ship_collisions(self.lasers, self.aliens)
                 self.eliminate_aliens()
                 self.alien_shoot()
 
             if len(self.alien_lasers) > 0:
-                self.space_ship_alien_laser_collision()
+                self.space_ship_collisions(self.alien_lasers)
 
             for explosion in self.explosions:
                 explosion.age += 1
@@ -315,16 +278,22 @@ class App:
                 for rock in self.rocks:
                     rock.update_rock_coordinates()
 
-            if self.game_phase == GamePhase.ALIENS and len(self.rocks) == 0 and len(self.aliens) == 0:
+            if self.game_phase == GamePhase.ALIENS and len(self.rocks) == 0:
+                self.game_phase = GamePhase.BASE
                 self.spawn_aliens()
 
             self.reset_screen()
-            self.draw_rocks()
-            self.draw_lasers()
-            self.draw_alien_lasers()
-            self.draw_aliens()
-            self.draw_space_ship()
-            self.draw_explosions()
+            for rock in self.rocks:
+                self.draw_object(rock)
+            for laser in self.lasers:
+                self.draw_object(laser)
+            for alien_laser in self.alien_lasers:
+                self.draw_object(alien_laser)
+            for alien in self.aliens:
+                self.draw_object(alien)
+            self.draw_object(self.spaceship)
+            for explosion in self.explosions:
+                self.draw_object(explosion)
 
             hp_indicator = "Hp: " + str(self.spaceship.hp)
             self.draw_game_info((0, self.screen_height * 0.025), hp_indicator)
