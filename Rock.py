@@ -55,6 +55,3 @@ class Rock:
 
         self.width = self.size * (new_window_width / 8)
         self.height = self.size * (new_window_height / 8)
-
-
-

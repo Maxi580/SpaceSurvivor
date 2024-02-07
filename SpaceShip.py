@@ -2,7 +2,6 @@ import pygame
 from pygame import Surface
 
 from Laser import Laser
-from enum import Enum, auto
 
 VELOCITY = 7
 LASER_VELOCITY = 14
