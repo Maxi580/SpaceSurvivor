@@ -4,7 +4,7 @@ import pygame
 from pygame import Surface
 
 VELOCITY = 7
-
+MAX_HP = 1
 
 class Alien:
     def __init__(self, x: float, y: float, screen_width: float, screen_height: float, surface: Surface):
@@ -15,7 +15,8 @@ class Alien:
         self.picture = surface
         self.surface = pygame.mask.from_surface(surface)
 
-        self.hp = 400
+        self.max_hp = MAX_HP
+        self.hp = self.max_hp
         self.shot_velocity = VELOCITY
 
     def calculate_shot_velocity(self, target_x, target_y) -> tuple[float, float]:
@@ -65,3 +66,6 @@ class Alien:
 
         self.width = new_window_width * 0.1
         self.height = new_window_height * 0.1
+
+    def get_max_hp(self):
+        return self.max_hp

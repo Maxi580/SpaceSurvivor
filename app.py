@@ -1,3 +1,4 @@
+import math
 import random
 from enum import Enum, auto
 
@@ -8,6 +9,7 @@ from win32api import GetSystemMetrics
 from Alien import Alien
 from Explosion import Explosion
 from Laser import Laser
+from Meteoroid import Meteoroid
 from Rock import Rock
 from SpaceShip import SpaceShip
 
@@ -15,7 +17,9 @@ from SpaceShip import SpaceShip
 class GamePhase(Enum):
     ROCKS = auto()
     ALIENS = auto()
-    BASE = auto()
+    FIGHTING_ALIENS = auto()
+    METEOROIDS = auto()
+    ENDLESS = auto()
 
 
 def blend_color(color1, color2, blend_factor):
@@ -65,9 +69,13 @@ class App:
 
         self.explosions: list[Explosion] = []
 
+        self.meteoroids: list[Meteoroid] = []
+        self.meteoroid_gap_factor = 1.15
+        self.meteoroid_hail_counter = 0
+
         self.clock = pygame.time.Clock()
         self.game_phase = GamePhase.ROCKS
-        self.end_of_first_phase = 100
+        self.end_of_first_phase = 0
         self.score = 0
         self.running = True
 
@@ -137,10 +145,29 @@ class App:
 
     def draw_object(self, draw_object):
         scaled_object_picture = pygame.transform.scale(draw_object.picture, (draw_object.width, draw_object.height))
+        if draw_object.picture == self.images['alien_laser']:
+            angle_radians = math.atan2(draw_object.velocity[0], draw_object.velocity[1])
+            angle_degrees = math.degrees(angle_radians)
+            scaled_object_picture = pygame.transform.rotate(scaled_object_picture, -angle_degrees)
         if isinstance(draw_object, SpaceShip) or isinstance(draw_object, Rock) or isinstance(draw_object, Laser) \
-                or isinstance(draw_object, Alien):
+                or isinstance(draw_object, Alien) or isinstance(draw_object, Meteoroid):
             draw_object.surface = pygame.mask.from_surface(scaled_object_picture)
         self.screen.blit(scaled_object_picture, (draw_object.x, draw_object.y))
+
+    def draw_health_bar(self, alien: Alien):
+        red = (255, 0, 0)
+        green = (0, 255, 0)
+
+        health_ratio = alien.hp / alien.get_max_hp()
+        length = alien.width
+        height = self.screen_height * 0.02
+
+        current_bar_length = length * health_ratio
+        x = alien.x
+        y = alien.y + alien.height + self.screen_height * 0.01
+
+        pygame.draw.rect(self.screen, red, (x, y, length, height))
+        pygame.draw.rect(self.screen, green, (x, y, current_bar_length, height))
 
     def eliminate_player(self):
         if self.spaceship.hp <= 0:
@@ -165,7 +192,7 @@ class App:
         i = 0
         while i < len(killable_objects):
             if killable_objects[i].hp <= 0:
-                if isinstance(killable_objects[i], Alien):
+                if isinstance(killable_objects[i], Alien) or isinstance(killable_objects[i], Meteoroid):
                     self.trigger_explosion(killable_objects[i].x, killable_objects[i].y, killable_objects[i].width,
                                            killable_objects[i].height, 1.2)
                 elif isinstance(killable_objects[i], Rock):
@@ -183,6 +210,18 @@ class App:
                                                alien.calculate_shot_velocity(self.spaceship.x, self.spaceship.y),
                                                self.images['alien_laser']))
 
+    def spawn_meteoroid_hail(self):
+        pos1 = random.randint(0, int(self.screen_width - (self.spaceship.width * self.meteoroid_gap_factor)))
+        pos2 = pos1 + self.spaceship.width * self.meteoroid_gap_factor
+        width = self.screen_width / 6
+        while pos2 < self.screen_width:
+            self.meteoroids.append(Meteoroid(pos2, width, self.screen_height, self.images['meteoroid']))
+            pos2 += width
+
+        while pos1 > -width:
+            self.meteoroids.append(Meteoroid(pos1 - width, width, self.screen_height, self.images['meteoroid']))
+            pos1 -= width
+
     def space_ship_collisions(self, colliders):
         for collider in colliders:
             offset_x = self.spaceship.x - collider.x
@@ -195,7 +234,7 @@ class App:
                     collider.collided = True
                     self.trigger_explosion(self.spaceship.x, self.spaceship.y, self.spaceship.width,
                                            self.spaceship.height)
-                elif isinstance(collider, Rock):
+                elif isinstance(collider, Rock) or isinstance(collider, Meteoroid):
                     self.trigger_explosion(self.spaceship.x, self.spaceship.y, self.spaceship.width,
                                            self.spaceship.height, colliding_spaceship=self.spaceship)
                     collider.hp = 0
@@ -229,6 +268,7 @@ class App:
         while self.running:
             self.clock.tick(30)
 
+            # Detect Collisions and Eliminate Objects without HP
             if len(self.rocks) > 0:
                 self.non_space_ship_collisions(self.lasers, self.rocks)
                 self.eliminate_objects(self.rocks)
@@ -242,20 +282,46 @@ class App:
             if len(self.alien_lasers) > 0:
                 self.space_ship_collisions(self.alien_lasers)
 
+            if len(self.meteoroids) > 0:
+                self.space_ship_collisions(self.meteoroids)
+                self.eliminate_objects(self.meteoroids)
+
+            self.lasers = [laser for laser in self.lasers if not laser.above_screen() and not laser.collided]
+            self.alien_lasers = [alien_laser for alien_laser in self.alien_lasers
+                                 if not alien_laser.below_screen(self.screen_height)
+                                 and not alien_laser.collided]
+            self.rocks = [rock for rock in self.rocks
+                          if not rock.below_screen(self.screen_height)]
+            self.meteoroids = [meteoroid for meteoroid in self.meteoroids
+                               if not meteoroid.below_screen(self.screen_height)]
+
+            # Update the coordinates of remaining objects according to velocity, also handle explosion animation
+            self.spaceship.update_space_ship_coordinates(self.screen_width, self.screen_height)
+            for laser in self.lasers:
+                laser.update_laser_coordinates()
+            for alien_laser in self.alien_lasers:
+                alien_laser.update_laser_coordinates()
+            for rock in self.rocks:
+                rock.update_rock_coordinates()
             for explosion in self.explosions:
                 explosion.age += 1
                 if explosion.adjust_stage_to_age() and explosion.stage <= 8:
                     explosion.adjust_picture_to_stage(self.images['explosion' + str(explosion.stage)])
             self.explosions = [explosion for explosion in self.explosions if explosion.stage <= 8]
+            for meteoroid in self.meteoroids:
+                meteoroid.update_coordinates()
 
+            # After a Player took Damage he is immune for a short period of time
             if self.spaceship.immune:
                 self.spaceship.increase_immune_counter()
             self.spaceship.reset_immune()
 
+            #  Close the Game if a player is dead, raise score if he is not and switch to phase aliens if score > x
             self.eliminate_player()
             self.score += 0.2
             self.adjust_game_phase()
 
+            # Catch User Input for shooting, movement, window-resize and quitting
             for event in pygame.event.get():
                 if event.type == pygame.QUIT:
                     self.running = False
@@ -273,28 +339,29 @@ class App:
                         if event.key == key:
                             self.spaceship.stop_movement(direction)
 
-            self.spaceship.update_space_ship_coordinates(self.screen_width, self.screen_height)
-
-            self.lasers = [laser for laser in self.lasers if not laser.above_screen() and not laser.collided]
-            self.alien_lasers = [alien_laser for alien_laser in self.alien_lasers if not
-                                 alien_laser.below_screen(self.screen_height) and not alien_laser.collided]
-
-            for laser in self.lasers:
-                laser.update_laser_coordinates()
-            for alien_laser in self.alien_lasers:
-                alien_laser.update_laser_coordinates()
-
+            # Handle Game-Phases
             if self.game_phase == GamePhase.ROCKS:
                 self.spawn_rock()
-            if len(self.rocks) > 0:
-                self.rocks = [rock for rock in self.rocks if not rock.below_screen(self.screen_height)]
-                for rock in self.rocks:
-                    rock.update_rock_coordinates()
 
             if self.game_phase == GamePhase.ALIENS and len(self.rocks) == 0:
-                self.game_phase = GamePhase.BASE
+                self.game_phase = GamePhase.FIGHTING_ALIENS
                 self.spawn_aliens()
 
+            if self.game_phase == GamePhase.FIGHTING_ALIENS and len(self.aliens) == 0:
+                self.game_phase = GamePhase.METEOROIDS
+
+            if (self.game_phase == GamePhase.METEOROIDS and len(self.meteoroids) == 0
+                    and self.meteoroid_hail_counter <= 5):
+                self.spawn_meteoroid_hail()
+                if self.meteoroid_hail_counter < 10:
+                    self.meteoroid_hail_counter += 1
+                else:
+                    self.game_phase = GamePhase.ENDLESS
+
+            if len(self.meteoroids) > 0:
+                self.space_ship_collisions(self.meteoroids)
+
+            # Draw everything
             self.reset_screen()
             for rock in self.rocks:
                 self.draw_object(rock)
@@ -304,6 +371,9 @@ class App:
                 self.draw_object(alien_laser)
             for alien in self.aliens:
                 self.draw_object(alien)
+                self.draw_health_bar(alien)
+            for meteoroid in self.meteoroids:
+                self.draw_object(meteoroid)
             self.draw_object(self.spaceship)
             for explosion in self.explosions:
                 if explosion.colliding_rock:
@@ -343,6 +413,7 @@ def load_images() -> dict:
         'explosion6': pygame.image.load('explosion6.png'),
         'explosion7': pygame.image.load('explosion7.png'),
         'explosion8': pygame.image.load('explosion8.png'),
+        'meteoroid': pygame.image.load('meteoroid.png'),
     }
     return images
 
