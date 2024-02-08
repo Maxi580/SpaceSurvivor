@@ -2,8 +2,6 @@ import pygame
 from pygame import Surface
 
 DAMAGE = 25
-
-
 #  Observer Pattern
 
 
@@ -18,7 +16,8 @@ class Rock:
 
         self.size = size
         self.hp = 100 * size
-        self.velocity = self.get_velocity()
+        self.base_velocity = 4
+        self.velocity = self.base_velocity + self.size
         self.damage = DAMAGE
 
     def update_rock_coordinates(self):
@@ -26,14 +25,6 @@ class Rock:
 
     def below_screen(self, height) -> bool:
         return self.y > height
-
-    def get_velocity(self) -> int:
-        if self.size == 1:
-            return 6
-        elif self.size == 2:
-            return 5
-        else:
-            return 4
 
     def update_middle_surface(self, surface):
         if self.hp <= 100:
@@ -51,3 +42,4 @@ class Rock:
     def adjust_velocity_to_window_resize(self, old_window_width: int, old_window_height: int,
                                          new_window_width: int, new_window_height: int):
         self.velocity *= (new_window_height / old_window_height)
+        self.base_velocity *= (new_window_height / old_window_height)

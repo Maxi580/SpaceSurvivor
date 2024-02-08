@@ -16,7 +16,7 @@ class SpaceShip:
         self.x_velocity = 7
         self.y_velocity = 7
         self.shot_velocity = 14
-        self.hp = 100
+        self.hp = 1000
         self.movement_directions = {"left": False, "right": False, "up": False, "down": False}
         self.immune = False
         self.immune_counter = 0
@@ -86,10 +86,10 @@ class SpaceShip:
     def set_immune(self):
         self.immune = True
 
-    def get_immune(self):
+    def is_immune(self) -> bool:
         return self.immune
 
-    def get_immune_counter(self):
+    def get_immune_counter(self) -> int:
         return self.immune_counter
 
     def reset_immune(self):
@@ -100,19 +100,19 @@ class SpaceShip:
     def increase_immune_counter(self):
         self.immune_counter += 1
 
-    def get_x(self):
+    def get_x(self) -> float:
         return self.x
 
-    def get_y(self):
+    def get_y(self) -> float:
         return self.y
 
-    def get_width(self):
+    def get_width(self) -> float:
         return self.width
 
-    def get_height(self):
+    def get_height(self) -> float:
         return self.height
 
-    def get_hp(self):
+    def get_hp(self) -> int:
         return self.hp
 
     def reduce_hp(self, amount):
@@ -123,5 +123,4 @@ class SpaceShip:
         self.y_velocity *= (new_window_height / old_window_height)
         self.x_velocity *= (new_window_width / old_window_width)
         self.shot_velocity *= (new_window_height / old_window_height)
-
 

@@ -2,10 +2,10 @@ import math
 import random
 import sys
 from enum import Enum, auto
+import utils
 
 import pygame
 import pygame.freetype
-from win32api import GetSystemMetrics
 
 from Alien import Alien
 from Explosion import Explosion
@@ -28,30 +28,11 @@ class GamePhase(Enum):
     ENDLESS = auto()
 
 
-def blend_color(color1, color2, blend_factor):
-    r = color1[0] + (color2[0] - color1[0]) * blend_factor
-    g = color1[1] + (color2[1] - color1[1]) * blend_factor
-    b = color1[2] + (color2[2] - color1[2]) * blend_factor
-    return int(r), int(g), int(b)
-
-
-def apply_vertical_gradient(surface, start_color, end_color):
-    height = surface.get_height()
-    for y in range(height):
-        blend = y / height
-        color = blend_color(start_color, end_color, blend)
-        for x in range(surface.get_width()):
-            pixel = surface.get_at((x, y))
-            surface.set_at((x, y), color + (pixel[3],))
-
-
 class App:
-    def __init__(self):
-        pygame.init()
+    def __init__(self, images, screen):
+        self.images = images
 
-        self.images = load_images()
-
-        self.screen = self.initialize_screen()
+        self.screen = screen
 
         self.spaceship: SpaceShip = SpaceShip(self.screen.get_width(), self.screen.get_height(),
                                               self.images['spaceship'])
@@ -83,20 +64,6 @@ class App:
         self.rock_phase_spawned_rocks = ROCK_PHASE_SPAWNED_ROCKS
         self.score = 0
         self.running = True
-
-    def initialize_screen(self):
-        width = GetSystemMetrics(0) * 0.25
-        height = GetSystemMetrics(1) * 0.6
-
-        screen = pygame.display.set_mode((width, height), pygame.RESIZABLE)
-
-        background = self.images["background"]
-        scaled_background = pygame.transform.scale(background, (width, height))
-        screen.blit(scaled_background, (0, 0))
-
-        pygame.display.update()
-
-        return screen
 
     def reset_screen(self):
         background = self.images["background"]
@@ -137,11 +104,11 @@ class App:
         font = pygame.font.SysFont('Raleway Bold', font_size)
         surface = font.render(text, True, (0, 0, 0))
 
-        apply_vertical_gradient(surface, colours[0], colours[1])
+        utils.apply_vertical_gradient(surface, colours[0], colours[1])
 
-        if pos[0] == 0:
+        if pos[0] <= 0:
             x = pos[0] + self.screen.get_width() * 0.0025
-        elif pos[0] == self.screen.get_width():
+        elif pos[0] >= self.screen.get_width():
             x = self.screen.get_width() * 0.9975 - surface.get_width()
         else:
             x = pos[0] - surface.get_width() * 0.5
@@ -184,7 +151,7 @@ class App:
         self.screen.blit(scaled_object_picture, (draw_object.x, draw_object.y))
 
     def draw_spaceship_shield(self):
-        if self.spaceship.get_immune() and self.spaceship.get_hp() > 0:
+        if self.spaceship.is_immune() and self.spaceship.get_hp() > 0:
             if self.spaceship.get_immune_counter() < 75 or self.spaceship.get_immune_counter() % 4 == 0:
                 scaled_shield_picture = pygame.transform.scale(self.images['shield'],
                                                                (self.spaceship.get_width() * 1.4,
@@ -202,7 +169,7 @@ class App:
 
         current_bar_length = length * health_ratio
         x = alien.get_x()
-        y = alien.get_height() + alien.height + self.screen.get_height() * 0.01
+        y = alien.get_height() + alien.get_y() + self.screen.get_height() * 0.01
 
         pygame.draw.rect(self.screen, red, (x, y, length, height))
         pygame.draw.rect(self.screen, green, (x, y, current_bar_length, height))
@@ -248,7 +215,7 @@ class App:
                                                self.images['alien_laser']))
 
     def spawn_meteoroid_hail(self):
-        pos1 = random.randint(0, 
+        pos1 = random.randint(0,
                               int(self.screen.get_width() - (self.spaceship.get_width() * self.meteoroid_gap_factor)))
         pos2 = pos1 + self.spaceship.get_width() * self.meteoroid_gap_factor
         width = self.screen.get_width() / 6
@@ -347,7 +314,7 @@ class App:
                 meteoroid.update_coordinates()
 
             # After a Player took Damage he is immune for a short period of time
-            if self.spaceship.get_immune():
+            if self.spaceship.is_immune():
                 self.spaceship.increase_immune_counter()
             self.spaceship.reset_immune()
 
@@ -386,7 +353,7 @@ class App:
                 self.game_phase = GamePhase.FIGHTING_ALIENS
                 self.spawn_aliens()
 
-            if self.game_phase == GamePhase.FIGHTING_ALIENS and len(self.aliens) == 0:
+            if self.game_phase == GamePhase.FIGHTING_ALIENS and len(self.aliens) == 0 and len(self.alien_lasers) == 0:
                 self.game_phase = GamePhase.METEOROIDS
 
             if (self.game_phase == GamePhase.METEOROIDS and len(self.meteoroids) == 0
@@ -432,7 +399,6 @@ class App:
                                 (start_color, end_color), int(0.1 * self.screen.get_width()))
 
             pygame.display.update()
-        pygame.quit()
 
     def end_of_game(self):
         text = "You Lost..."
@@ -450,37 +416,4 @@ class App:
                     pygame.quit()
                     sys.exit()
                 elif event.type == pygame.MOUSEBUTTONDOWN:
-                    # Mouse button clicked, break from the loop to resume game
                     waiting_for_click = False
-
-
-def load_images() -> dict:
-    """Loads every Picture once"""
-    images = {
-        'background': pygame.image.load('Background2.jpg'),
-        'spaceship': pygame.image.load('SpaceShip.png'),
-        'alien_spaceship': pygame.image.load('AlienSpaceShip.png'),
-        'laser': pygame.image.load('laser.png'),
-        'alien_laser': pygame.image.load('AlienLaser.png'),
-        'bigRock100HP': pygame.image.load('bigRock100HP.png'),
-        'bigRock200HP': pygame.image.load('bigRock200HP.png'),
-        'bigRock300HP': pygame.image.load('bigRock300HP.png'),
-        'middleRock100HP': pygame.image.load('middleRock100HP.png'),
-        'middleRock200HP': pygame.image.load('middleRock200HP.png'),
-        'smallRock100HP': pygame.image.load('smallRock100HP.png'),
-        'explosion1': pygame.image.load('explosion1.png'),
-        'explosion2': pygame.image.load('explosion2.png'),
-        'explosion3': pygame.image.load('explosion3.png'),
-        'explosion4': pygame.image.load('explosion4.png'),
-        'explosion5': pygame.image.load('explosion5.png'),
-        'explosion6': pygame.image.load('explosion6.png'),
-        'explosion7': pygame.image.load('explosion7.png'),
-        'explosion8': pygame.image.load('explosion8.png'),
-        'meteoroid': pygame.image.load('meteoroid.png'),
-        'shield': pygame.image.load('shield.png'),
-    }
-    return images
-
-
-app = App()
-app.run()
