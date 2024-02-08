@@ -28,11 +28,10 @@ class Laser:
     def below_screen(self, window_height: int) -> bool:
         return self.y > window_height
 
-    def adjust_size_to_window_resize(self, old_window_width: int, old_window_height: int,
-                                     new_window_width: int, new_window_height: int,
-                                     new_ship_width: int, new_ship_height: int):
-        self.x = (self.x / old_window_width) * new_window_width
-        self.y = (self.y / old_window_height) * new_window_height
+    def adjust_velocity_to_window_resize(self, old_window_width: int, old_window_height: int,
+                                         new_window_width: int, new_window_height: int):
+        self.velocity[0] *= (new_window_width / old_window_width)
+        self.velocity[1] *= (new_window_height / old_window_height)
 
-        self.width = new_ship_width * 0.5
-        self.height = new_ship_height * 0.2
+    def get_collided(self):
+        return self.collided

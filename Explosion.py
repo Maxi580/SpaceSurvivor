@@ -33,6 +33,24 @@ class Explosion:
     def adjust_y_to_movement_of_object(self):
         self.y += self.colliding_rock.velocity
 
+    def increase_age(self, amount):
+        self.age += amount
+
+    def get_stage(self):
+        return self.stage
+
+    def get_colliding_rock(self):
+        return self.colliding_rock
+
+    def get_colliding_spaceship(self):
+        return self.colliding_spaceship
+
     def adjust_coordinates_to_spaceship(self):
-        self.x = self.colliding_spaceship.x + 0.5 * self.colliding_spaceship.width - self.width * 0.5
-        self.y = self.colliding_spaceship.y + 0.5 * self.colliding_spaceship.height - self.width * 0.5
+        self.x = self.colliding_spaceship.get_x() + 0.5 * self.colliding_spaceship.get_width() - self.width * 0.5
+        self.y = self.colliding_spaceship.get_y() + 0.5 * self.colliding_spaceship.get_height() - self.width * 0.5
+
+
+
+
+
+

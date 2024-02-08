@@ -48,10 +48,6 @@ class Rock:
             self.surface = pygame.mask.from_surface(surface_100hp)
             self.picture = surface_100hp
 
-    def adjust_size_to_window_resize(self, old_window_width: int, old_window_height: int,
-                                     new_window_width: int, new_window_height: int):
-        self.x = (self.x / old_window_width) * new_window_width
-        self.y = (self.y / old_window_height) * new_window_height
-
-        self.width = self.size * (new_window_width / 8)
-        self.height = self.size * (new_window_height / 8)
+    def adjust_velocity_to_window_resize(self, old_window_width: int, old_window_height: int,
+                                         new_window_width: int, new_window_height: int):
+        self.velocity *= (new_window_height / old_window_height)
