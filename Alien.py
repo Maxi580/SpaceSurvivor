@@ -4,7 +4,8 @@ import pygame
 from pygame import Surface
 
 VELOCITY = 7
-MAX_HP = 1
+MAX_HP = 250
+
 
 class Alien:
     def __init__(self, x: float, y: float, screen_width: float, screen_height: float, surface: Surface):

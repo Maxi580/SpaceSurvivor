@@ -75,7 +75,7 @@ class App:
 
         self.clock = pygame.time.Clock()
         self.game_phase = GamePhase.ROCKS
-        self.end_of_first_phase = 0
+        self.end_of_first_phase = 150
         self.score = 0
         self.running = True
 
