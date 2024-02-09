@@ -2,6 +2,9 @@ import math
 import random
 import sys
 from enum import Enum, auto
+
+from pygame import Surface, SurfaceType
+
 import utils
 
 import pygame
@@ -18,6 +21,7 @@ ROCK_PROBABILITY = 0.0025
 METEOROID_GAP_FACTOR = 1.17
 ROCK_PHASE_SPAWNED_ROCKS = 3
 METEOROID_PHASE_HAIL_AMOUNT = 5
+ALIEN_SHOOT_PROBABILITY = 0.035
 
 
 class GamePhase(Enum):
@@ -25,17 +29,23 @@ class GamePhase(Enum):
     ALIENS = auto()
     FIGHTING_ALIENS = auto()
     METEOROIDS = auto()
-    ENDLESS = auto()
+    FINAL = auto()
 
 
 class App:
-    def __init__(self, images, screen):
+    def __init__(self, images: dict, screen: Surface | SurfaceType, hp: int):
         self.images = images
 
         self.screen = screen
+        self.old_width = screen.get_width()
+        self.old_height = screen.get_height()
+
+
+        self.green_color = [(0, 255, 0), (0, 128, 0)]
+        self.red_color = [(255, 0, 0), (102, 0, 0)]
 
         self.spaceship: SpaceShip = SpaceShip(self.screen.get_width(), self.screen.get_height(),
-                                              self.images['spaceship'])
+                                              self.images['spaceship'], hp)
         self.key_to_attr = {pygame.K_a: 'LEFT',
                             pygame.K_w: 'UP',
                             pygame.K_s: 'DOWN',
@@ -70,33 +80,32 @@ class App:
         scaled_background = pygame.transform.scale(background, (self.screen.get_width(), self.screen.get_height()))
         self.screen.blit(scaled_background, (0, 0))
 
-    def update_screen_size(self, width, height):
-        self.adjust_size_to_window_resize(width, height, self.spaceship)
+    def update_screen_size(self):
+        self.adjust_size_to_window_resize(self.spaceship)
         for alien in self.aliens:
-            self.adjust_size_to_window_resize(width, height, alien)
+            self.adjust_size_to_window_resize(alien)
 
         for laser in self.lasers:
-            self.adjust_size_to_window_resize(width, height, laser)
+            self.adjust_size_to_window_resize(laser)
 
         for meteoroid in self.meteoroids:
-            self.adjust_size_to_window_resize(width, height, meteoroid)
+            self.adjust_size_to_window_resize(meteoroid)
 
         for rock in self.rocks:
-            self.adjust_size_to_window_resize(width, height, rock)
+            self.adjust_size_to_window_resize(rock)
 
         for explosion in self.explosions:
-            self.adjust_size_to_window_resize(width, height, explosion)
+            self.adjust_size_to_window_resize(explosion)
 
-    def adjust_size_to_window_resize(self, new_window_width: int, new_window_height: int,
-                                     adjusted_object: Rock | Meteoroid | Alien | SpaceShip | Laser | Explosion):
-        adjusted_object.x = (adjusted_object.x / self.screen.get_width()) * new_window_width
-        adjusted_object.y = (adjusted_object.y / self.screen.get_height()) * new_window_height
+    def adjust_size_to_window_resize(self, adjusted_object: Rock | Meteoroid | Alien | SpaceShip | Laser | Explosion):
+        adjusted_object.x *= (self.screen.get_width() / self.old_width)
+        adjusted_object.y *= (self.screen.get_height() / self.old_height)
 
         if not isinstance(adjusted_object, Explosion):
-            adjusted_object.adjust_velocity_to_window_resize(self.screen.get_width(), self.screen.get_height(),
-                                                             new_window_width, new_window_height)
-        adjusted_object.width *= (new_window_width / self.screen.get_width())
-        adjusted_object.height *= (new_window_height / self.screen.get_height())
+            adjusted_object.adjust_velocity_to_window_resize(self.old_width, self.old_height,
+                                                             self.screen.get_width(), self.screen.get_height())
+        adjusted_object.width *= (self.screen.get_width() / self.old_width)
+        adjusted_object.height *= (self.screen.get_height() / self.old_height)
 
     def draw_game_info(self, pos: tuple[float, float], text: str, colours: tuple[tuple[int, int, int],
                        tuple[int, int, int]], font_size):
@@ -208,7 +217,7 @@ class App:
 
     def alien_shoot(self):
         for alien in self.aliens:
-            if random.random() < 0.035:
+            if random.random() < ALIEN_SHOOT_PROBABILITY:
                 self.alien_lasers.append(Laser(alien.get_x(), alien.get_y(), alien.get_width(), alien.get_height(),
                                                alien.calculate_shot_velocity(self.spaceship.get_x(),
                                                                              self.spaceship.get_y()),
@@ -249,12 +258,12 @@ class App:
                 offset_y = collider1.y - collider2.y
                 if collider2.surface.overlap(collider1.surface, (offset_x, offset_y)):
                     collider1.collided = True
-                    if isinstance(collider1, Laser) and isinstance(collider2, Alien):
+                    if isinstance(collider2, Alien):
                         self.trigger_explosion(collider1.x, collider1.y, collider1.width * 2, collider1.width * 2,
                                                1)
 
                         collider2.hp -= collider1.damage
-                    if isinstance(collider1, Laser) and isinstance(collider2, Rock):
+                    if isinstance(collider2, Rock):
                         self.trigger_explosion(collider1.x, collider1.y, collider1.width * 2, collider1.width * 2,
                                                1, collider2)
                         collider2.hp -= collider1.damage
@@ -330,7 +339,9 @@ class App:
                     sys.exit()
                 elif event.type == pygame.VIDEORESIZE:
                     self.screen = pygame.display.set_mode((event.w, event.h), pygame.RESIZABLE)
-                    self.update_screen_size(event.w, event.h)
+                    self.update_screen_size()
+                    self.old_width = self.screen.get_width()
+                    self.old_height = self.screen.get_height()
                 elif event.type == pygame.MOUSEBUTTONDOWN and event.button == 1:
                     self.lasers.append(self.spaceship.shoot(self.images["laser"]))
                 elif event.type == pygame.KEYDOWN:
@@ -362,7 +373,7 @@ class App:
                 if self.meteoroid_hail_counter < 10:
                     self.meteoroid_hail_counter += 1
                 else:
-                    self.game_phase = GamePhase.ENDLESS
+                    self.game_phase = GamePhase.FINAL
 
             if len(self.meteoroids) > 0:
                 self.space_ship_collisions(self.meteoroids)
@@ -389,14 +400,12 @@ class App:
                     explosion.adjust_coordinates_to_spaceship()
                 self.draw_object(explosion)
 
-            start_color = (0, 255, 0)
-            end_color = (0, 128, 0)
             hp_indicator = "Hp: " + str(self.spaceship.get_hp())
             self.draw_game_info((0, self.screen.get_height() * 0.025), hp_indicator,
-                                (start_color, end_color), int(0.1 * self.screen.get_width()))
+                                (self.green_color[0], self.green_color[1]), int(0.1 * self.screen.get_width()))
             score_counter = "Score: " + str(round(self.score))
             self.draw_game_info((self.screen.get_width(), self.screen.get_height() * 0.025), score_counter,
-                                (start_color, end_color), int(0.1 * self.screen.get_width()))
+                                (self.green_color[0], self.green_color[1]), int(0.1 * self.screen.get_width()))
 
             pygame.display.update()
 
@@ -405,10 +414,23 @@ class App:
         x = self.screen.get_width() * 0.5
         y = self.screen.get_height() * 0.5
 
-        start_color = (255, 0, 0)
-        end_color = (102, 0, 0)
-        self.draw_game_info((x, y), text, (start_color, end_color), int(0.2 * self.screen.get_width()))
+        self.draw_game_info((x, y), text, (self.red_color[0], self.red_color[1]), int(0.2 * self.screen.get_width()))
         pygame.display.update()
+
+        try:
+            prior_highscore = utils.get_high_score()
+        except FileNotFoundError:
+            prior_highscore = 0
+            utils.write_high_score(prior_highscore)
+
+        if self.score > prior_highscore:
+            utils.write_high_score(int(self.score))
+
+            text = "New Highscore: " + str(utils.get_high_score())
+            self.draw_game_info((x, y * 1.4), text, (self.red_color[0], self.red_color[1]),
+                                int(0.1 * self.screen.get_width()))
+            pygame.display.update()
+
         waiting_for_click = True
         while waiting_for_click:
             for event in pygame.event.get():

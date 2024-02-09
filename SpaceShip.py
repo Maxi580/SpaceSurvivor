@@ -5,7 +5,7 @@ from Laser import Laser
 
 
 class SpaceShip:
-    def __init__(self, width: int, height: int, surface: Surface):
+    def __init__(self, width: int, height: int, surface: Surface, hp: int):
         self.width = width * 0.1
         self.height = height * 0.1
         self.x = width * 0.5 - self.width * 0.5
@@ -16,7 +16,7 @@ class SpaceShip:
         self.x_velocity = 7
         self.y_velocity = 7
         self.shot_velocity = 14
-        self.hp = 1000
+        self.hp = hp
         self.movement_directions = {"left": False, "right": False, "up": False, "down": False}
         self.immune = False
         self.immune_counter = 0
@@ -80,7 +80,7 @@ class SpaceShip:
     def take_hit(self, damage):
         self.hp -= damage
 
-    def shoot(self, surface):
+    def shoot(self, surface) -> Laser:
         return Laser(self.x, self.y, self.width, self.height, (0, self.shot_velocity), surface)
 
     def set_immune(self):
