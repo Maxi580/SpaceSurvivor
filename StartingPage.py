@@ -25,7 +25,7 @@ class SpaceshipCustomization(Enum):
 
 def load_images() -> dict:
     images = {
-        'background': pygame.image.load('resources/Background2.jpg'),
+        'background': pygame.image.load('resources/Background.jpg'),
         'spaceship': None,
         'alien_spaceship': pygame.image.load('resources/AlienSpaceShip.png'),
         'laser': None,
