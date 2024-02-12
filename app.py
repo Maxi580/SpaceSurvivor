@@ -437,7 +437,7 @@ class App:
                 self.draw_object(meteoroid)
             for rocket in self.rockets:
                 self.draw_object(rocket)
-            if self.game_phase.ROCKETS and len(self.meteoroids) == 0:
+            if self.game_phase == GamePhase.ROCKETS and len(self.meteoroids) == 0:
                 self.draw_object(self.mothership)
             self.draw_object(self.spaceship)
             self.draw_spaceship_shield()
