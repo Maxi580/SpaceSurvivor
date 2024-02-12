@@ -328,15 +328,15 @@ class App:
                                if not meteoroid.below_screen(self.screen.get_height())]
 
             # Update the coordinates of remaining objects according to velocity, also handle explosion animation
-            self.spaceship.update_space_ship_coordinates(self.screen.get_width(), self.screen.get_height())
+            self.spaceship.update_coordinates(self.screen.get_width(), self.screen.get_height())
             for alien in self.aliens:
                 alien.move_to_position(self.screen.get_height() * 0.1)
             for laser in self.lasers:
-                laser.update_laser_coordinates()
+                laser.update_coordinates()
             for alien_laser in self.alien_lasers:
-                alien_laser.update_laser_coordinates()
+                alien_laser.update_coordinates()
             for rock in self.rocks:
-                rock.update_rock_coordinates()
+                rock.update_coordinates()
             for explosion in self.explosions:
                 explosion.increase_age(1)
                 if explosion.adjust_stage_to_age() and explosion.get_stage() <= 8:

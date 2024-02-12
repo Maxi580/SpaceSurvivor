@@ -2,9 +2,10 @@ from math import sqrt
 
 import pygame
 from pygame import Surface
+from ObjectInterface import Entity
 
 
-class Alien:
+class Alien(Entity):
     def __init__(self, x: float, screen_width: float, screen_height: float, surface: Surface, velocity: int,
                  shot_velocity: int, hp: int):
         self.width = screen_width * 0.1
@@ -53,7 +54,7 @@ class Alien:
 
         return x_velocity, y_velocity
 
-    def move_to_position(self, position_y):
+    def update_coordinates(self, position_y):
         if self.y < (position_y - self.velocity):
             self.y += self.velocity
         elif (position_y - self.velocity) < self.y < position_y or self.y > position_y:

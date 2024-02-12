@@ -1,10 +1,11 @@
 import pygame
 from pygame import Surface
+from ObjectInterface import Entity
 
 DAMAGE = 25
 
 
-class Laser:
+class Laser(Entity):
     def __init__(self, x: float, y: float, width: float, height: float, velocity: tuple[float, float],
                  surface: Surface):
         self.height = height * 0.5
@@ -18,7 +19,7 @@ class Laser:
         self.damage = DAMAGE
         self.collided = False
 
-    def update_laser_coordinates(self):
+    def update_coordinates(self):
         self.x += self.velocity[0]
         self.y -= self.velocity[1]
 

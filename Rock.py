@@ -1,10 +1,11 @@
 import pygame
 from pygame import Surface
+from ObjectInterface import Entity
 
 DAMAGE = 25
 
 
-class Rock:
+class Rock(Entity):
     def __init__(self, x: int, screen_width: int, screen_height: int, size: int, surface: Surface, velocity: float):
         self.width = size * (screen_width / 8)
         self.height = size * (screen_height / 8)
@@ -19,7 +20,7 @@ class Rock:
         print(self.velocity)
         self.damage = DAMAGE
 
-    def update_rock_coordinates(self):
+    def update_coordinates(self):
         self.y += self.velocity
 
     def below_screen(self, height) -> bool:

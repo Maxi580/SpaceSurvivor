@@ -1,10 +1,11 @@
 import pygame
 from pygame import Surface
+from ObjectInterface import Entity
 
 DAMAGE = 25
 
 
-class Meteoroid:
+class Meteoroid(Entity):
     def __init__(self, x: float, width: float, screen_height: int, surface: Surface, velocity: int):
         self.width = width
         self.height = screen_height / 2

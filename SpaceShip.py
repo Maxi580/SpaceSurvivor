@@ -2,9 +2,10 @@ import pygame
 from pygame import Surface
 from math import sqrt
 from Laser import Laser
+from ObjectInterface import Entity
 
 
-class SpaceShip:
+class SpaceShip(Entity):
     def __init__(self, width: int, height: int, surface: Surface, hp: int, velocity: int, shot_velocity: int):
         self.width = width * 0.1
         self.height = height * 0.1
@@ -20,7 +21,7 @@ class SpaceShip:
         self.immune = False
         self.immune_counter = 0
 
-    def update_space_ship_coordinates(self, screen_width: int, screen_height: int):
+    def update_coordinates(self, screen_width: int, screen_height: int):
         movement_count = sum(self.movement_directions.values())
         if movement_count == 2:
             vector_velocity = sqrt((self.velocity ** 2) / 2)
