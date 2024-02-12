@@ -43,7 +43,7 @@ class GamePhase(Enum):
 
 
 class App:
-    def __init__(self, images: dict, screen: Surface | SurfaceType, hp: int, velocity_difficulty_factor: int):
+    def __init__(self, images: dict, screen: Surface | SurfaceType, hp: int, difficulty_factor: int):
         self.images = images
 
         self.screen = screen
@@ -54,11 +54,12 @@ class App:
         self.red_color = [(255, 0, 0), (102, 0, 0)]
         self.font_size = int(0.1 * self.screen.get_width())
 
+        self.difficulty_factor = difficulty_factor
         self.ship_hp = hp
-        self.ship_velocity = SHIP_BASE_VELOCITY * velocity_difficulty_factor
-        self.laser_velocity = LASER_BASE_VELOCITY * velocity_difficulty_factor
-        self.rock_velocity = ROCK_BASE_VELOCITY * velocity_difficulty_factor
-        self.meteoroid_velocity = METEOROID_BASE_VELOCITY * velocity_difficulty_factor
+        self.ship_velocity = SHIP_BASE_VELOCITY * difficulty_factor
+        self.laser_velocity = LASER_BASE_VELOCITY * difficulty_factor
+        self.rock_velocity = ROCK_BASE_VELOCITY * difficulty_factor
+        self.meteoroid_velocity = METEOROID_BASE_VELOCITY * difficulty_factor
 
         self.spaceship: SpaceShip = SpaceShip(self.screen.get_width(), self.screen.get_height(),
                                               self.images['spaceship'], hp, self.ship_velocity,
@@ -88,8 +89,8 @@ class App:
         self.rockets: list[Rocket] = []
         self.rocket_x = self.screen.get_width() // 2
         self.rocket_y = 0
-        self.rocket_velocity = ROCKET_BASE_VELOCITY * velocity_difficulty_factor
-        self.rocket_amount = ROCKETS_AMOUNT * velocity_difficulty_factor
+        self.rocket_velocity = ROCKET_BASE_VELOCITY * difficulty_factor
+        self.rocket_amount = ROCKETS_AMOUNT * difficulty_factor
 
         self.mothership: Mothership = Mothership(self.screen.get_width(), self.screen.get_height(),
                                                  self.images['alien_spaceship'])
@@ -375,7 +376,7 @@ class App:
 
             #  Close the Game if a player is dead, raise score if he is not
             self.eliminate_player()
-            self.score += 0.2
+            self.score += 0.2 * self.difficulty_factor
 
             # Catch User Input for shooting, movement, window-resize and quitting
             for event in pygame.event.get():
