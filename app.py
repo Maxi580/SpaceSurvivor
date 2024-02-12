@@ -330,7 +330,7 @@ class App:
             # Update the coordinates of remaining objects according to velocity, also handle explosion animation
             self.spaceship.update_coordinates(self.screen.get_width(), self.screen.get_height())
             for alien in self.aliens:
-                alien.move_to_position(self.screen.get_height() * 0.1)
+                alien.update_coordinates(self.screen.get_height() * 0.1)
             for laser in self.lasers:
                 laser.update_coordinates()
             for alien_laser in self.alien_lasers:
