@@ -7,12 +7,48 @@ import pygame
 from ObjectInterface import Entity
 
 
+def find_leftmost_pixel(image):
+    for x in range(image.get_width()):
+        for y in range(image.get_height()):
+            alpha = image.get_at((x, y))[3]
+            if alpha != 0:
+                return x
+    return None
+
+
+def find_rightmost_pixel(image):
+    for x in range(image.get_width() - 1, -1, -1):
+        for y in range(image.get_height()):
+            alpha = image.get_at((x, y))[3]
+            if alpha != 0:
+                return x
+    return None
+
+
+def find_highest_pixel(image):
+    for y in range(image.get_height()):
+        for x in range(image.get_width()):
+            alpha = image.get_at((x, y))[3]
+            if alpha != 0:
+                return y
+    return None
+
+
+def find_lowest_pixel(image):
+    for y in range(image.get_height() - 1, -1, -1):
+        for x in range(image.get_width()):
+            alpha = image.get_at((x, y))[3]
+            if alpha != 0:
+                return y
+    return None
+
+
 class Rocket(Entity):
     def __init__(self, velocity, width, height, x, y, surface):
-        self.height = height * 1.2
-        self.width = width
+        self.height = height * 0.3
+        self.width = width * 0.1
         self.x = x + width * 0.5 - self.width * 0.5
-        self.y = y
+        self.y = y + height
         self.damage = 25
         self.hp = 1
 
@@ -25,24 +61,36 @@ class Rocket(Entity):
         self.calculate_direction()
 
     def update_coordinates(self, width, height):
+        left_x = find_leftmost_pixel(self.picture) + self.x
+        right_x = find_rightmost_pixel(self.picture) + self.x
+        top_y = find_highest_pixel(self.picture) + self.y
+        bottom_y = find_lowest_pixel(self.picture) + self.y
+
         #  Left Border
-        if (self.x + self.x_velocity) <= 0:
-            self.x = 0
+        if (left_x + self.x_velocity) <= 0:
+            self.x_velocity *= -1
+            self.calculate_direction()
         #  Right Border
-        elif (self.x + self.width + self.x_velocity) >= width:
-            self.x = width - self.width
-        #  Top Border
-        elif (self.y + self.y_velocity) <= 0:
-            self.y = 0
+        if (right_x + self.x_velocity) >= width:
+            self.x_velocity *= -1
+            self.calculate_direction()
+        if (top_y + self.y_velocity) <= 0:
+            self.y_velocity *= -1
+            self.calculate_direction()
         #  Bottom Border
-        elif (self.y + self.height + self.y_velocity) >= height:
-            self.y = height - self.height
-        else:
-            self.x += self.x_velocity
-            self.y += self.y_velocity
+        if (bottom_y + self.y_velocity) >= height:
+            self.y_velocity *= -1
+            self.calculate_direction()
+        self.x += self.x_velocity
+        self.y += self.y_velocity
 
     def return_at_border(self, width, height):
-        if self.x == 0 or (self.x + self.width) == width:
+        left_x = find_leftmost_pixel(self.picture) + self.x
+        right_x = find_rightmost_pixel(self.picture) + self.x
+        top_y = find_highest_pixel(self.picture) + self.y
+        bottom_y = find_lowest_pixel(self.picture) + self.y
+
+        if left_x == 0 or right_x == width:
             self.x_velocity *= -1
             self.calculate_direction()
         if self.y == 0 or (self.y + self.height) == height:

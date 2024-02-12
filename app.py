@@ -14,22 +14,24 @@ from Alien import Alien
 from Explosion import Explosion
 from Laser import Laser
 from Meteoroid import Meteoroid
+from Mothership import Mothership
 from Rock import Rock
 from Rocket import Rocket
 from SpaceShip import SpaceShip
 
 ROCK_PROBABILITY = 0.0025
 METEOROID_GAP_FACTOR = 1.17
-ROCK_PHASE_SPAWNED_ROCKS = 10
+ROCK_PHASE_SPAWNED_ROCKS = 0
 METEOROID_PHASE_HAIL_AMOUNT = 0
 ALIEN_SHOOT_PROBABILITY = 0.035
-ROCKET_SPAWN_PROBABILITY = 1/120
+ROCKETS_AMOUNT = 10
+
 
 SHIP_BASE_VELOCITY = 7
 LASER_BASE_VELOCITY = 9
 ROCK_BASE_VELOCITY = 9
 METEOROID_BASE_VELOCITY = 6
-ROCKET_BASE_VELOCITY = 4
+ROCKET_BASE_VELOCITY = 6
 
 
 class GamePhase(Enum):
@@ -87,6 +89,10 @@ class App:
         self.rocket_x = self.screen.get_width() // 2
         self.rocket_y = 0
         self.rocket_velocity = ROCKET_BASE_VELOCITY * velocity_difficulty_factor
+        self.rocket_amount = ROCKETS_AMOUNT * velocity_difficulty_factor
+
+        self.mothership: Mothership = Mothership(self.screen.get_width(), self.screen.get_height(),
+                                                 self.images['alien_spaceship'])
 
         self.clock = pygame.time.Clock()
         self.game_phase = GamePhase.ROCKS
@@ -102,6 +108,7 @@ class App:
 
     def update_screen_size(self):
         self.adjust_size_to_window_resize(self.spaceship)
+        self.adjust_size_to_window_resize(self.mothership)
         for alien in self.aliens:
             self.adjust_size_to_window_resize(alien)
 
@@ -120,11 +127,11 @@ class App:
             self.adjust_size_to_window_resize(explosion)
         self.font_size = int(self.font_size * (self.screen.get_width() / self.old_width))
 
-    def adjust_size_to_window_resize(self, adjusted_object: Rock | Meteoroid | Alien | SpaceShip | Laser | Explosion):
+    def adjust_size_to_window_resize(self, adjusted_object):
         adjusted_object.x *= (self.screen.get_width() / self.old_width)
         adjusted_object.y *= (self.screen.get_height() / self.old_height)
 
-        if not isinstance(adjusted_object, Explosion):
+        if not isinstance(adjusted_object, Explosion) and not isinstance(adjusted_object, Mothership):
             adjusted_object.adjust_velocity_to_window_resize(self.old_width, self.old_height,
                                                              self.screen.get_width(), self.screen.get_height())
 
@@ -264,12 +271,9 @@ class App:
             pos1 -= width
 
     def spawn_rockets(self):
-        if len(self.rockets) <= 1:
-            self.rockets.append(Rocket(self.rocket_velocity, self.spaceship.get_width(), self.spaceship.get_height(),
-                                       self.rocket_x, self.rocket_y, self.images['rocket']))
-        elif len(self.rockets) <= 0 and random.random() < ROCKET_SPAWN_PROBABILITY:
-            self.rockets.append(Rocket(self.rocket_velocity, self.spaceship.get_width(), self.spaceship.get_height(),
-                                       self.rocket_x, self.rocket_y, self.images['rocket']))
+        if len(self.rockets) < self.rocket_amount:
+            self.rockets.append(Rocket(self.rocket_velocity, self.mothership.get_width(), self.mothership.get_height(),
+                                       self.mothership.get_x(), self.mothership.get_y(), self.images['rocket']))
 
     def space_ship_collisions(self, colliders):
         for collider in colliders:
@@ -384,7 +388,7 @@ class App:
                     self.update_screen_size()
                     self.old_width = self.screen.get_width()
                     self.old_height = self.screen.get_height()
-                elif event.type == pygame.MOUSEBUTTONDOWN and event.button == 1:
+                elif event.type == pygame.MOUSEBUTTONDOWN and event.button == 1 and self.game_phase != GamePhase.ROCKETS:
                     self.lasers.append(self.spaceship.shoot(self.images["laser"]))
                 elif event.type == pygame.KEYDOWN:
                     for key, direction in self.key_to_attr.items():
@@ -433,6 +437,8 @@ class App:
                 self.draw_object(meteoroid)
             for rocket in self.rockets:
                 self.draw_object(rocket)
+            if self.game_phase.ROCKETS and len(self.meteoroids) == 0:
+                self.draw_object(self.mothership)
             self.draw_object(self.spaceship)
             self.draw_spaceship_shield()
             for explosion in self.explosions:
