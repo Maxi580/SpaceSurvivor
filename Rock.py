@@ -2,11 +2,10 @@ import pygame
 from pygame import Surface
 
 DAMAGE = 25
-#  Observer Pattern
 
 
 class Rock:
-    def __init__(self, x: int, screen_width: int, screen_height: int, size: int, surface: Surface):
+    def __init__(self, x: int, screen_width: int, screen_height: int, size: int, surface: Surface, velocity: float):
         self.width = size * (screen_width / 8)
         self.height = size * (screen_height / 8)
         self.x = x - self.width * 0.5
@@ -16,8 +15,8 @@ class Rock:
 
         self.size = size
         self.hp = 100 * size
-        self.base_velocity = 4
-        self.velocity = self.base_velocity + self.size
+        self.velocity = velocity
+        print(self.velocity)
         self.damage = DAMAGE
 
     def update_rock_coordinates(self):
@@ -42,4 +41,4 @@ class Rock:
     def adjust_velocity_to_window_resize(self, old_window_width: int, old_window_height: int,
                                          new_window_width: int, new_window_height: int):
         self.velocity *= (new_window_height / old_window_height)
-        self.base_velocity *= (new_window_height / old_window_height)
+        print(self.velocity)

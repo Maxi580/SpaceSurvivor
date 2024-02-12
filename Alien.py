@@ -3,13 +3,10 @@ from math import sqrt
 import pygame
 from pygame import Surface
 
-SHIP_VELOCITY = 3.5
-VELOCITY = 7
-MAX_HP = 250
-
 
 class Alien:
-    def __init__(self, x: float, screen_width: float, screen_height: float, surface: Surface):
+    def __init__(self, x: float, screen_width: float, screen_height: float, surface: Surface, velocity: int,
+                 shot_velocity: int, hp: int):
         self.width = screen_width * 0.1
         self.height = screen_height * 0.1
         self.x = self.assign_x_value(x, screen_width)
@@ -17,11 +14,11 @@ class Alien:
         self.picture = surface
         self.surface = pygame.mask.from_surface(surface)
 
-        self.max_hp = MAX_HP
+        self.max_hp = hp * 2
         self.hp = self.max_hp
-        self.ship_velocity = SHIP_VELOCITY
-        self.shot_velocity = VELOCITY
-        self.velocity = 7
+
+        self.velocity = velocity
+        self.shot_velocity = shot_velocity
 
     def calculate_shot_velocity(self, target_x, target_y) -> tuple[float, float]:
         """First: Calculate x/ y difference to target
@@ -40,9 +37,10 @@ class Alien:
             else:
                 return -self.shot_velocity, 0
 
-        x_size_relative_to_y = (x_difference / y_difference)
+        y_size_relative_to_x = (x_difference / y_difference)
 
-        right_side_of_pythagoras = (self.shot_velocity ** 2) / (x_size_relative_to_y ** 2 + 1)
+        right_side_of_pythagoras = (self.shot_velocity ** 2) / (y_size_relative_to_x ** 2 + 1)
+
         if y_difference > 0:
             y_velocity = -sqrt(right_side_of_pythagoras)
         else:
@@ -57,7 +55,7 @@ class Alien:
 
     def move_to_position(self, position_y):
         if self.y < (position_y - self.velocity):
-            self.y += self.ship_velocity
+            self.y += self.velocity
         elif (position_y - self.velocity) < self.y < position_y or self.y > position_y:
             self.y = position_y
 
@@ -72,6 +70,7 @@ class Alien:
     def adjust_velocity_to_window_resize(self, old_window_width: int, old_window_height: int,
                                          new_window_width: int, new_window_height: int):
         self.velocity *= (new_window_height / old_window_height)
+        self.shot_velocity *= (new_window_height / old_window_height)
 
     def get_max_hp(self):
         return self.max_hp
@@ -90,5 +89,4 @@ class Alien:
 
     def get_height(self):
         return self.height
-
 

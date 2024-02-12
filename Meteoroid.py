@@ -5,7 +5,7 @@ DAMAGE = 25
 
 
 class Meteoroid:
-    def __init__(self, x: float, width: float, screen_height: int, surface: Surface):
+    def __init__(self, x: float, width: float, screen_height: int, surface: Surface, velocity: int):
         self.width = width
         self.height = screen_height / 2
         self.x = x
@@ -13,8 +13,8 @@ class Meteoroid:
         self.surface = pygame.mask.from_surface(surface)
         self.picture = surface
 
-        self.hp = 100
-        self.velocity = 7
+        self.hp = 1
+        self.velocity = velocity
         self.damage = DAMAGE
 
     def below_screen(self, window_height: int) -> bool:

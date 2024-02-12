@@ -5,7 +5,7 @@ from Laser import Laser
 
 
 class SpaceShip:
-    def __init__(self, width: int, height: int, surface: Surface, hp: int):
+    def __init__(self, width: int, height: int, surface: Surface, hp: int, velocity: int, shot_velocity: int):
         self.width = width * 0.1
         self.height = height * 0.1
         self.x = width * 0.5 - self.width * 0.5
@@ -13,9 +13,8 @@ class SpaceShip:
         self.picture = surface
         self.surface = pygame.mask.from_surface(surface)
 
-        self.x_velocity = 7
-        self.y_velocity = 7
-        self.shot_velocity = 14
+        self.velocity = velocity
+        self.shot_velocity = shot_velocity
         self.hp = hp
         self.movement_directions = {"left": False, "right": False, "up": False, "down": False}
         self.immune = False
@@ -24,33 +23,31 @@ class SpaceShip:
     def update_space_ship_coordinates(self, screen_width: int, screen_height: int):
         movement_count = sum(self.movement_directions.values())
         if movement_count == 2:
-            y_velocity = sqrt((self.y_velocity ** 2) / 2)
-            x_velocity = sqrt((self.x_velocity ** 2) / 2)
+            vector_velocity = sqrt((self.velocity ** 2) / 2)
         else:
-            y_velocity = self.y_velocity
-            x_velocity = self.x_velocity
+            vector_velocity = self.velocity
 
         if self.movement_directions.get("left"):
-            new_x_coordinate = self.x - x_velocity
+            new_x_coordinate = self.x - vector_velocity
             if new_x_coordinate > 0:
                 self.x = new_x_coordinate
             else:
                 self.x = 0
         if self.movement_directions.get("right"):
-            new_x_coordinate = self.x + x_velocity
+            new_x_coordinate = self.x + vector_velocity
             x_maximum = (screen_width - self.width)
             if new_x_coordinate < x_maximum:
                 self.x = new_x_coordinate
             else:
                 self.x = x_maximum
         if self.movement_directions.get("up"):
-            new_y_coordinate = self.y - y_velocity
+            new_y_coordinate = self.y - vector_velocity
             if new_y_coordinate > 0:
                 self.y = new_y_coordinate
             else:
                 self.y = 0
         if self.movement_directions.get("down"):
-            new_y_coordinate = self.y + y_velocity
+            new_y_coordinate = self.y + vector_velocity
             y_minimum = (screen_height - self.height)
             if new_y_coordinate < y_minimum:
                 self.y = new_y_coordinate
@@ -120,7 +117,6 @@ class SpaceShip:
 
     def adjust_velocity_to_window_resize(self, old_window_width: int, old_window_height: int,
                                          new_window_width: int, new_window_height: int):
-        self.y_velocity *= (new_window_height / old_window_height)
-        self.x_velocity *= (new_window_width / old_window_width)
+        self.velocity *= (new_window_height / old_window_height)
         self.shot_velocity *= (new_window_height / old_window_height)
 

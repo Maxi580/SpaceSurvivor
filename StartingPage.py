@@ -39,9 +39,9 @@ def load_images() -> dict:
 
 
 class Difficulty(Enum):
-    EASY = 150
-    NORMAL = 100
-    HARD = 50
+    EASY = 0
+    NORMAL = 1
+    HARD = 2
 
 
 class StartingPage:
@@ -56,7 +56,10 @@ class StartingPage:
         self.old_width = self.screen.get_width()
         self.old_height = self.screen.get_height()
         self.running = True
+
         self.game_difficulty = Difficulty.NORMAL
+        self.hp_difficulty_level = [125, 100, 75]
+        self.velocity_difficulty_factor = [0.8, 1, 1.2]
 
         self.green_colors = [(0, 255, 0), (0, 128, 0)]
         self.grey_colors = [(64, 64, 64), (128, 128, 128)]
@@ -70,7 +73,7 @@ class StartingPage:
         self.play_button_width = self.screen.get_width() * 0.5
         self.play_button_height = self.screen.get_height() * 0.1
         self.play_button_x = self.screen.get_width() * 0.5 - self.play_button_width * 0.5
-        self.play_button_y = self.screen.get_height() * 0.3
+        self.play_button_y = self.headline_y + self.headline_height * 1.5
 
         self.difficulty_button_width = self.screen.get_width() * 0.15
         self.difficulty_button_height = self.screen.get_height() * 0.05
@@ -148,6 +151,10 @@ class StartingPage:
         self.draw_game_info((self.headline_x, self.headline_y), title,
                             (self.green_colors[0], self.green_colors[1]))
 
+        title = "High-Score: " + str(utils.get_high_score())
+        self.draw_game_info((self.headline_x, self.headline_y + self.headline_height * 0.5), title,
+                            (self.green_colors[0], self.green_colors[1]))
+
         text = "Play!"
         self.draw_button(self.play_button_x, self.play_button_y, self.play_button_width, self.play_button_height,
                          text, (self.green_colors[0], self.green_colors[1]),
@@ -201,7 +208,8 @@ class StartingPage:
                     mouse_x, mouse_y = event.pos
                     if self.play_button_x <= mouse_x <= (self.play_button_x + self.play_button_width) and \
                             self.play_button_y <= mouse_y <= (self.play_button_y + self.play_button_height):
-                        app = App(self.images, self.screen, self.game_difficulty.value)
+                        app = App(self.images, self.screen, self.hp_difficulty_level[self.game_difficulty.value],
+                                  self.velocity_difficulty_factor[self.game_difficulty.value])
                         app.run()
                     elif self.easy_button_x <= mouse_x <= (self.easy_button_x + self.difficulty_button_width) and \
                             self.difficulty_button_y <= mouse_y <= (self.difficulty_button_y +

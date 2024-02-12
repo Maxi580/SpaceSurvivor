@@ -19,9 +19,14 @@ from SpaceShip import SpaceShip
 
 ROCK_PROBABILITY = 0.0025
 METEOROID_GAP_FACTOR = 1.17
-ROCK_PHASE_SPAWNED_ROCKS = 3
+ROCK_PHASE_SPAWNED_ROCKS = 0
 METEOROID_PHASE_HAIL_AMOUNT = 5
 ALIEN_SHOOT_PROBABILITY = 0.035
+
+SHIP_BASE_VELOCITY = 7
+LASER_BASE_VELOCITY = 9
+ROCK_BASE_VELOCITY = 9
+METEOROID_BASE_VELOCITY = 6
 
 
 class GamePhase(Enum):
@@ -33,19 +38,26 @@ class GamePhase(Enum):
 
 
 class App:
-    def __init__(self, images: dict, screen: Surface | SurfaceType, hp: int):
+    def __init__(self, images: dict, screen: Surface | SurfaceType, hp: int, velocity_difficulty_factor: int):
         self.images = images
 
         self.screen = screen
         self.old_width = screen.get_width()
         self.old_height = screen.get_height()
 
-
         self.green_color = [(0, 255, 0), (0, 128, 0)]
         self.red_color = [(255, 0, 0), (102, 0, 0)]
+        self.font_size = int(0.1 * self.screen.get_width())
+
+        self.ship_hp = hp
+        self.ship_velocity = SHIP_BASE_VELOCITY * velocity_difficulty_factor
+        self.laser_velocity = LASER_BASE_VELOCITY * velocity_difficulty_factor
+        self.rock_velocity = ROCK_BASE_VELOCITY * velocity_difficulty_factor
+        self.meteoroid_velocity = METEOROID_BASE_VELOCITY * velocity_difficulty_factor
 
         self.spaceship: SpaceShip = SpaceShip(self.screen.get_width(), self.screen.get_height(),
-                                              self.images['spaceship'], hp)
+                                              self.images['spaceship'], hp, self.ship_velocity,
+                                              self.laser_velocity)
         self.key_to_attr = {pygame.K_a: 'LEFT',
                             pygame.K_w: 'UP',
                             pygame.K_s: 'DOWN',
@@ -58,9 +70,9 @@ class App:
         self.rock_spawn_start_probability = ROCK_PROBABILITY
         self.rock_spawn_increment_probability = ROCK_PROBABILITY
         self.rock_spawn_probability = self.rock_spawn_start_probability
+        self.rock_stage_velocity_factor = 1
 
         self.aliens: list[Alien] = []
-
         self.explosions: list[Explosion] = []
 
         self.meteoroids: list[Meteoroid] = []
@@ -93,9 +105,12 @@ class App:
 
         for rock in self.rocks:
             self.adjust_size_to_window_resize(rock)
+        self.rock_velocity *= (self.screen.get_height() / self.old_height)
+        self.rock_stage_velocity_factor *= (self.screen.get_height() / self.old_height)
 
         for explosion in self.explosions:
             self.adjust_size_to_window_resize(explosion)
+        self.font_size = int(self.font_size * (self.screen.get_width() / self.old_width))
 
     def adjust_size_to_window_resize(self, adjusted_object: Rock | Meteoroid | Alien | SpaceShip | Laser | Explosion):
         adjusted_object.x *= (self.screen.get_width() / self.old_width)
@@ -108,9 +123,9 @@ class App:
         adjusted_object.height *= (self.screen.get_height() / self.old_height)
 
     def draw_game_info(self, pos: tuple[float, float], text: str, colours: tuple[tuple[int, int, int],
-                       tuple[int, int, int]], font_size):
+                       tuple[int, int, int]]):
         """Lädt einen Text, wendet darauf einen Farbverlauf an und zeichnet ihn."""
-        font = pygame.font.SysFont('Raleway Bold', font_size)
+        font = pygame.font.SysFont('Raleway Bold', self.font_size)
         surface = font.render(text, True, (0, 0, 0))
 
         utils.apply_vertical_gradient(surface, colours[0], colours[1])
@@ -131,7 +146,8 @@ class App:
 
     def create_rock(self, x, size):
         surfaces = [self.images["smallRock100HP"], self.images["middleRock200HP"], self.images["bigRock300HP"]]
-        return Rock(x, self.screen.get_width(), self.screen.get_height(), size, surfaces[size - 1])
+        return Rock(x, self.screen.get_width(), self.screen.get_height(), size, surfaces[size - 1],
+                    self.rock_velocity - (self.rock_stage_velocity_factor * size))
 
     def spawn_rock(self):
         if random.random() < self.rock_spawn_probability:
@@ -190,15 +206,20 @@ class App:
 
     def spawn_aliens(self):
         self.aliens.append(Alien(0, self.screen.get_width(), self.screen.get_height(),
-                                 self.images["alien_spaceship"]))
+                                 self.images["alien_spaceship"], self.ship_velocity, self.laser_velocity,
+                                 self.ship_hp))
         self.aliens.append(Alien(self.screen.get_width() * 0.25, self.screen.get_width(),
-                                 self.screen.get_height(), self.images["alien_spaceship"]))
+                                 self.screen.get_height(), self.images["alien_spaceship"], self.ship_velocity,
+                                 self.laser_velocity, self.ship_hp))
         self.aliens.append(Alien(self.screen.get_width() * 0.5, self.screen.get_width(),
-                                 self.screen.get_height(), self.images["alien_spaceship"]))
+                                 self.screen.get_height(), self.images["alien_spaceship"], self.ship_velocity,
+                                 self.laser_velocity, self.ship_hp))
         self.aliens.append(Alien(self.screen.get_width() * 0.75, self.screen.get_width(),
-                                 self.screen.get_height(), self.images["alien_spaceship"]))
+                                 self.screen.get_height(), self.images["alien_spaceship"], self.ship_velocity,
+                                 self.laser_velocity, self.ship_hp))
         self.aliens.append(Alien(self.screen.get_width(), self.screen.get_width(), self.screen.get_height(),
-                                 self.images["alien_spaceship"]))
+                                 self.images["alien_spaceship"], self.ship_velocity,
+                                 self.laser_velocity, self.ship_hp))
 
     def eliminate_objects(self, killable_objects):
         i = 0
@@ -229,11 +250,13 @@ class App:
         pos2 = pos1 + self.spaceship.get_width() * self.meteoroid_gap_factor
         width = self.screen.get_width() / 6
         while pos2 < self.screen.get_width():
-            self.meteoroids.append(Meteoroid(pos2, width, self.screen.get_height(), self.images['meteoroid']))
+            self.meteoroids.append(Meteoroid(pos2, width, self.screen.get_height(), self.images['meteoroid'],
+                                             self.meteoroid_velocity))
             pos2 += width
 
         while pos1 > -width:
-            self.meteoroids.append(Meteoroid(pos1 - width, width, self.screen.get_height(), self.images['meteoroid']))
+            self.meteoroids.append(Meteoroid(pos1 - width, width, self.screen.get_height(), self.images['meteoroid'],
+                                             self.meteoroid_velocity))
             pos1 -= width
 
     def space_ship_collisions(self, colliders):
@@ -402,10 +425,10 @@ class App:
 
             hp_indicator = "Hp: " + str(self.spaceship.get_hp())
             self.draw_game_info((0, self.screen.get_height() * 0.025), hp_indicator,
-                                (self.green_color[0], self.green_color[1]), int(0.1 * self.screen.get_width()))
-            score_counter = "Score: " + str(round(self.score))
+                                (self.green_color[0], self.green_color[1]))
+            score_counter = "Score: " + str(int(self.score))
             self.draw_game_info((self.screen.get_width(), self.screen.get_height() * 0.025), score_counter,
-                                (self.green_color[0], self.green_color[1]), int(0.1 * self.screen.get_width()))
+                                (self.green_color[0], self.green_color[1]))
 
             pygame.display.update()
 
@@ -414,7 +437,7 @@ class App:
         x = self.screen.get_width() * 0.5
         y = self.screen.get_height() * 0.5
 
-        self.draw_game_info((x, y), text, (self.red_color[0], self.red_color[1]), int(0.2 * self.screen.get_width()))
+        self.draw_game_info((x, y), text, (self.red_color[0], self.red_color[1]))
         pygame.display.update()
 
         try:
@@ -427,8 +450,7 @@ class App:
             utils.write_high_score(int(self.score))
 
             text = "New Highscore: " + str(utils.get_high_score())
-            self.draw_game_info((x, y * 1.4), text, (self.red_color[0], self.red_color[1]),
-                                int(0.1 * self.screen.get_width()))
+            self.draw_game_info((x, y * 1.4), text, (self.red_color[0], self.red_color[1]))
             pygame.display.update()
 
         waiting_for_click = True

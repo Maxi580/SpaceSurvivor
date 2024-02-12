@@ -30,8 +30,10 @@ class Laser:
 
     def adjust_velocity_to_window_resize(self, old_window_width: int, old_window_height: int,
                                          new_window_width: int, new_window_height: int):
-        self.velocity[0] *= (new_window_width / old_window_width)
-        self.velocity[1] *= (new_window_height / old_window_height)
+
+        x_velocity = self.velocity[0] * (new_window_width / old_window_width)
+        y_velocity = self.velocity[1] * (new_window_height / old_window_height)
+        self.velocity = [x_velocity, y_velocity]
 
     def get_collided(self):
         return self.collided
