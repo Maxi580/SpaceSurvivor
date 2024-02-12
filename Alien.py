@@ -17,7 +17,7 @@ class Alien(Entity):
         self.surface = pygame.mask.from_surface(self.picture)
 
         self.max_hp = hp * 2
-        self.hp = self.max_hp * 0
+        self.hp = self.max_hp
 
         self.velocity = velocity
         self.shot_velocity = shot_velocity
