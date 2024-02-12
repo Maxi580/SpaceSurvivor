@@ -6,7 +6,8 @@ DAMAGE = 25
 
 
 class Rock(Entity):
-    def __init__(self, x: int, screen_width: int, screen_height: int, size: int, surface: Surface, velocity: float):
+    def __init__(self, x: int, screen_width: int, screen_height: int, size: int, surface: Surface, velocity: float,
+                 hp: int):
         self.width = size * (screen_width / 8)
         self.height = size * (screen_height / 8)
         self.x = x - self.width * 0.5
@@ -15,9 +16,8 @@ class Rock(Entity):
         self.picture = surface
 
         self.size = size
-        self.hp = 100 * size
+        self.hp = hp * size
         self.velocity = velocity
-        print(self.velocity)
         self.damage = DAMAGE
 
     def update_coordinates(self):

@@ -1,5 +1,5 @@
 import sys
-from enum import Enum, auto
+from enum import Enum
 
 import utils
 
@@ -10,13 +10,25 @@ from win32api import GetSystemMetrics
 from app import App
 
 
+class Difficulty(Enum):
+    EASY = 0
+    NORMAL = 1
+    HARD = 2
+
+
+class SpaceshipCustomization(Enum):
+    GREEN = 0
+    BLUE = 1
+    BLACK = 2
+    ORANGE = 3
+
+
 def load_images() -> dict:
-    """Loads every Picture once"""
     images = {
         'background': pygame.image.load('resources/Background2.jpg'),
-        'spaceship': pygame.image.load('resources/SpaceShip.png'),
+        'spaceship': None,
         'alien_spaceship': pygame.image.load('resources/AlienSpaceShip.png'),
-        'laser': pygame.image.load('resources/laser.png'),
+        'laser': None,
         'alien_laser': pygame.image.load('resources/AlienLaser.png'),
         'bigRock100HP': pygame.image.load('resources/bigRock100HP.png'),
         'bigRock200HP': pygame.image.load('resources/bigRock200HP.png'),
@@ -38,10 +50,24 @@ def load_images() -> dict:
     return images
 
 
-class Difficulty(Enum):
-    EASY = 0
-    NORMAL = 1
-    HARD = 2
+def adjust_brightness(image, change):
+    """
+    Adjusts the brightness of an image by adding 'change' to each RGB value.
+    'change' can be positive (to brighten) or negative (to darken).
+    """
+    adjusted_image = pygame.Surface(image.get_size(), pygame.SRCALPHA)
+
+    for x in range(image.get_width()):
+        for y in range(image.get_height()):
+            pixel = image.get_at((x, y))
+
+            new_r = max(min(pixel.r + change, 255), 0)
+            new_g = max(min(pixel.g + change, 255), 0)
+            new_b = max(min(pixel.b + change, 255), 0)
+
+            adjusted_image.set_at((x, y), (new_r, new_g, new_b, pixel.a))
+
+    return adjusted_image
 
 
 class StartingPage:
@@ -50,7 +76,21 @@ class StartingPage:
         pygame.display.set_caption('Space Survivor')
         self.clock = pygame.time.Clock()
 
+        self.customization_spaceships = [
+            pygame.image.load('resources/SpaceShip_green.png'),
+            pygame.image.load('resources/SpaceShip_blue.png'),
+            pygame.image.load('resources/SpaceShip_black.png'),
+            pygame.image.load('resources/SpaceShip_orange.png'),
+        ]
+        self.customization_lasers = [
+            pygame.image.load('resources/laser_green.png'),
+            pygame.image.load('resources/laser_blue.png'),
+            pygame.image.load('resources/laser_black.png'),
+            pygame.image.load('resources/laser_orange.png'),
+        ]
+
         self.images = load_images()
+        self.spaceship_customization = SpaceshipCustomization.GREEN
         pygame.display.set_icon(self.images['explosion2'])
         self.screen = self.initialize_screen()
         self.old_width = self.screen.get_width()
@@ -59,7 +99,7 @@ class StartingPage:
 
         self.game_difficulty = Difficulty.NORMAL
         self.hp_difficulty_level = [125, 100, 75]
-        self.velocity_difficulty_factor = [0.8, 1, 1.2]
+        self.velocity_difficulty_factor = [0.9, 1, 1.1]
 
         self.green_colors = [(0, 255, 0), (0, 128, 0)]
         self.grey_colors = [(64, 64, 64), (128, 128, 128)]
@@ -84,6 +124,14 @@ class StartingPage:
         self.normal_button_x = self.play_button_x + self.difficulty_button_width + self.difficulty_button_distance
         self.hard_button_x = self.play_button_x + 2 * self.difficulty_button_width + 2 * self.difficulty_button_distance
 
+        self.customize_images_amount = len(self.customization_spaceships)
+        self.customize_image_width = self.screen.get_width() / (self.customize_images_amount + 1)
+        self.gap_amount = self.customize_images_amount + 1
+        self.customize_image_gap_width = self.customize_image_width / self.gap_amount
+
+        self.customize_image_height = 0.2 * self.screen.get_height()
+        self.customize_image_y = self.difficulty_button_y + 0.2 * self.screen.get_height()
+
     def initialize_screen(self):
         width = GetSystemMetrics(0) * 0.25
         height = GetSystemMetrics(1) * 0.6
@@ -104,7 +152,8 @@ class StartingPage:
 
     def adjust_values_to_resize(self):
         width_values = ['headline_width', 'headline_x', 'play_button_width', 'play_button_x', 'difficulty_button_width',
-                        'easy_button_x', 'normal_button_x', 'hard_button_x']
+                        'easy_button_x', 'normal_button_x', 'hard_button_x', 'customize_image_width',
+                        'customize_image_gap_width']
 
         for width_value in width_values:
             current_value = getattr(self, width_value)
@@ -112,7 +161,8 @@ class StartingPage:
             setattr(self, width_value, new_value)
 
         height_values = ['headline_height', 'headline_y', 'play_button_height', 'play_button_y',
-                         'difficulty_button_height', 'difficulty_button_y']
+                         'difficulty_button_height', 'difficulty_button_y', 'customize_image_height',
+                         'customize_image_y']
         for height_value in height_values:
             current_value = getattr(self, height_value)
             new_value = current_value * self.screen.get_height() / self.old_height
@@ -146,6 +196,15 @@ class StartingPage:
 
         self.screen.blit(rect_surf, (x, y))
 
+    def draw_customization(self):
+        for i in range(0, self.customize_images_amount):
+            image = pygame.transform.scale(self.customization_spaceships[i], (self.customize_image_width,
+                                                                              self.customize_image_height))
+            if self.spaceship_customization.value != i:
+                image = adjust_brightness(image, -80)
+            self.screen.blit(image, (i * self.customize_image_width + (i + 1) * self.customize_image_gap_width,
+                                     self.customize_image_y))
+
     def draw_overlay(self):
         title = "Welcome to Space Survivor!"
         self.draw_game_info((self.headline_x, self.headline_y), title,
@@ -166,8 +225,8 @@ class StartingPage:
         else:
             start_color, end_color = self.grey_colors[0], self.grey_colors[1]
         self.draw_button(self.easy_button_x, self.difficulty_button_y, self.difficulty_button_width,
-                         self.difficulty_button_height, text,(start_color, end_color),
-                         (0, 0, 0, 210), self.font_size//2)
+                         self.difficulty_button_height, text, (start_color, end_color),
+                         (0, 0, 0, 210), self.font_size // 2)
 
         text = "Normal"
         if self.game_difficulty == Difficulty.NORMAL:
@@ -175,8 +234,8 @@ class StartingPage:
         else:
             start_color, end_color = self.grey_colors[0], self.grey_colors[1]
         self.draw_button(self.normal_button_x, self.difficulty_button_y, self.difficulty_button_width,
-                         self.difficulty_button_height, text, (start_color, end_color),(0, 0, 0, 210),
-                         self.font_size//2)
+                         self.difficulty_button_height, text, (start_color, end_color), (0, 0, 0, 210),
+                         self.font_size // 2)
         text = "Hard"
         if self.game_difficulty == Difficulty.HARD:
             start_color, end_color = self.green_colors[0], self.green_colors[1]
@@ -184,9 +243,15 @@ class StartingPage:
             start_color, end_color = self.grey_colors[0], self.grey_colors[1]
         self.draw_button(self.hard_button_x, self.difficulty_button_y, self.difficulty_button_width,
                          self.difficulty_button_height, text, (start_color, end_color), (0, 0, 0, 210),
-                         self.font_size//2)
-
+                         self.font_size // 2)
+        self.draw_customization()
         pygame.display.update()
+
+    def assign_customizable_images(self):
+        for i in range(0, len(self.customization_spaceships)):
+            if self.spaceship_customization.value == i:
+                self.images['spaceship'] = self.customization_spaceships[i]
+                self.images['laser'] = self.customization_lasers[i]
 
     def run(self):
         self.reset_screen()
@@ -208,6 +273,7 @@ class StartingPage:
                     mouse_x, mouse_y = event.pos
                     if self.play_button_x <= mouse_x <= (self.play_button_x + self.play_button_width) and \
                             self.play_button_y <= mouse_y <= (self.play_button_y + self.play_button_height):
+                        self.assign_customizable_images()
                         app = App(self.images, self.screen, self.hp_difficulty_level[self.game_difficulty.value],
                                   self.velocity_difficulty_factor[self.game_difficulty.value])
                         app.run()
@@ -223,7 +289,12 @@ class StartingPage:
                             self.difficulty_button_y <= mouse_y <= (self.difficulty_button_y +
                                                                     self.difficulty_button_height):
                         self.game_difficulty = Difficulty.HARD
-
+                    elif self.customize_image_y <= mouse_y <= (self.customize_image_y + self.customize_image_height):
+                        for i in range(0, self.customize_images_amount):
+                            if ((i * self.customize_image_width + ((i + 1) * self.customize_image_gap_width)) <= mouse_x
+                                    <= ((i + 1) * self.customize_image_width +
+                                        (i + 1) * self.customize_image_gap_width)):
+                                self.spaceship_customization = SpaceshipCustomization(i)
                     self.reset_screen()
                     self.draw_overlay()
 

@@ -19,7 +19,7 @@ from SpaceShip import SpaceShip
 
 ROCK_PROBABILITY = 0.0025
 METEOROID_GAP_FACTOR = 1.17
-ROCK_PHASE_SPAWNED_ROCKS = 0
+ROCK_PHASE_SPAWNED_ROCKS = 30
 METEOROID_PHASE_HAIL_AMOUNT = 5
 ALIEN_SHOOT_PROBABILITY = 0.035
 
@@ -147,7 +147,7 @@ class App:
     def create_rock(self, x, size):
         surfaces = [self.images["smallRock100HP"], self.images["middleRock200HP"], self.images["bigRock300HP"]]
         return Rock(x, self.screen.get_width(), self.screen.get_height(), size, surfaces[size - 1],
-                    self.rock_velocity - (self.rock_stage_velocity_factor * size))
+                    self.rock_velocity - (self.rock_stage_velocity_factor * size), self.ship_hp)
 
     def spawn_rock(self):
         if random.random() < self.rock_spawn_probability:

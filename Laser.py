@@ -1,3 +1,5 @@
+from math import sqrt
+
 import pygame
 from pygame import Surface
 from ObjectInterface import Entity
