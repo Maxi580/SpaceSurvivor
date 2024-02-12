@@ -1,3 +1,4 @@
+import math
 from math import sqrt
 
 import pygame
@@ -14,16 +15,21 @@ class Laser(Entity):
         self.width = width * 0.2
         self.x = x + width * 0.5 - self.width * 0.5
         self.y = y
-        self.picture = surface
-        self.surface = pygame.mask.from_surface(surface)
+        self.x_velocity = velocity[0]
+        self.y_velocity = velocity[1]
 
-        self.velocity = velocity
+        scaled_surface = pygame.transform.scale(surface, (self.width, self.height))
+        angle_radians = math.atan2(self.x_velocity, self.y_velocity)
+        angle_degrees = math.degrees(angle_radians)
+        self.picture = pygame.transform.rotate(scaled_surface, -angle_degrees)
+        self.surface = pygame.mask.from_surface(self.picture)
+
         self.damage = DAMAGE
         self.collided = False
 
     def update_coordinates(self):
-        self.x += self.velocity[0]
-        self.y -= self.velocity[1]
+        self.x += self.x_velocity
+        self.y -= self.y_velocity
 
     def above_screen(self) -> bool:
         return (self.y + self.height) < 0
@@ -33,10 +39,8 @@ class Laser(Entity):
 
     def adjust_velocity_to_window_resize(self, old_window_width: int, old_window_height: int,
                                          new_window_width: int, new_window_height: int):
-
-        x_velocity = self.velocity[0] * (new_window_width / old_window_width)
-        y_velocity = self.velocity[1] * (new_window_height / old_window_height)
-        self.velocity = [x_velocity, y_velocity]
+        self.x_velocity *= (new_window_width / old_window_width)
+        self.y_velocity *= (new_window_height / old_window_height)
 
     def get_collided(self):
         return self.collided

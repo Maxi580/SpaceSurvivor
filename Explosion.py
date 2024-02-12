@@ -1,3 +1,4 @@
+import pygame
 from pygame import Surface
 
 from Rock import Rock
@@ -5,17 +6,19 @@ from SpaceShip import SpaceShip
 
 
 class Explosion:
-    def __init__(self, ship_x: int, ship_y: int, ship_width: int, ship_height: int, surface: Surface,
+    def __init__(self, x: int, y: int, width: int, height: int, surface: Surface,
                  size_factor: float, colliding_rock: Rock = None, colliding_spaceship: SpaceShip = None):
         self.stage = 0
         self.age = 0
         self.age_factor = 3
-        self.picture = surface
 
-        self.width = ship_width * size_factor
-        self.height = ship_height * size_factor
-        self.x = ship_x + 0.5 * ship_width - self.width * 0.5
-        self.y = ship_y + 0.5 * ship_height - self.height * 0.5
+        self.width = width * size_factor
+        self.height = height * size_factor
+        self.picture = pygame.transform.scale(surface, (self.width, self.height))
+
+        self.x = x + 0.5 * width - self.width * 0.5
+        self.y = y + 0.5 * height - self.height * 0.5
+
         self.colliding_rock = colliding_rock
         self.colliding_spaceship = colliding_spaceship
 
@@ -28,7 +31,7 @@ class Explosion:
             return False
 
     def adjust_picture_to_stage(self, picture: Surface):
-        self.picture = picture
+        self.picture = pygame.transform.scale(picture, (self.width, self.height))
 
     def adjust_y_to_movement_of_object(self):
         self.y += self.colliding_rock.velocity

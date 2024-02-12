@@ -15,18 +15,21 @@ from Explosion import Explosion
 from Laser import Laser
 from Meteoroid import Meteoroid
 from Rock import Rock
+from Rocket import Rocket
 from SpaceShip import SpaceShip
 
 ROCK_PROBABILITY = 0.0025
 METEOROID_GAP_FACTOR = 1.17
-ROCK_PHASE_SPAWNED_ROCKS = 30
-METEOROID_PHASE_HAIL_AMOUNT = 5
+ROCK_PHASE_SPAWNED_ROCKS = 10
+METEOROID_PHASE_HAIL_AMOUNT = 0
 ALIEN_SHOOT_PROBABILITY = 0.035
+ROCKET_SPAWN_PROBABILITY = 1/120
 
 SHIP_BASE_VELOCITY = 7
 LASER_BASE_VELOCITY = 9
 ROCK_BASE_VELOCITY = 9
 METEOROID_BASE_VELOCITY = 6
+ROCKET_BASE_VELOCITY = 4
 
 
 class GamePhase(Enum):
@@ -34,7 +37,7 @@ class GamePhase(Enum):
     ALIENS = auto()
     FIGHTING_ALIENS = auto()
     METEOROIDS = auto()
-    FINAL = auto()
+    ROCKETS = auto()
 
 
 class App:
@@ -80,6 +83,11 @@ class App:
         self.meteoroid_hail_counter = 0
         self.meteoroid_phase_hail_amount = METEOROID_PHASE_HAIL_AMOUNT
 
+        self.rockets: list[Rocket] = []
+        self.rocket_x = self.screen.get_width() // 2
+        self.rocket_y = 0
+        self.rocket_velocity = ROCKET_BASE_VELOCITY * velocity_difficulty_factor
+
         self.clock = pygame.time.Clock()
         self.game_phase = GamePhase.ROCKS
         self.rock_counter = 0
@@ -119,8 +127,11 @@ class App:
         if not isinstance(adjusted_object, Explosion):
             adjusted_object.adjust_velocity_to_window_resize(self.old_width, self.old_height,
                                                              self.screen.get_width(), self.screen.get_height())
+
         adjusted_object.width *= (self.screen.get_width() / self.old_width)
         adjusted_object.height *= (self.screen.get_height() / self.old_height)
+        adjusted_object.picture = pygame.transform.scale(adjusted_object.picture,
+                                                         (adjusted_object.width, adjusted_object.height))
 
     def draw_game_info(self, pos: tuple[float, float], text: str, colours: tuple[tuple[int, int, int],
                        tuple[int, int, int]]):
@@ -139,9 +150,9 @@ class App:
 
         self.screen.blit(surface, (x, pos[1]))
 
-    def trigger_explosion(self, space_ship_x, space_ship_y, space_ship_width, space_ship_height,
+    def trigger_explosion(self, x, y, width, height,
                           size_factor: float = 1, colliding_rock: Rock = None, colliding_spaceship: SpaceShip = None):
-        self.explosions.append(Explosion(space_ship_x, space_ship_y, space_ship_width, space_ship_height,
+        self.explosions.append(Explosion(x, y, width, height,
                                          self.images['explosion1'], size_factor, colliding_rock, colliding_spaceship))
 
     def create_rock(self, x, size):
@@ -165,15 +176,7 @@ class App:
             self.rock_spawn_probability += self.rock_spawn_increment_probability
 
     def draw_object(self, draw_object):
-        scaled_object_picture = pygame.transform.scale(draw_object.picture, (draw_object.width, draw_object.height))
-        if draw_object.picture == self.images['alien_laser']:
-            angle_radians = math.atan2(draw_object.velocity[0], draw_object.velocity[1])
-            angle_degrees = math.degrees(angle_radians)
-            scaled_object_picture = pygame.transform.rotate(scaled_object_picture, -angle_degrees)
-        if isinstance(draw_object, SpaceShip) or isinstance(draw_object, Rock) or isinstance(draw_object, Laser) \
-                or isinstance(draw_object, Alien) or isinstance(draw_object, Meteoroid):
-            draw_object.surface = pygame.mask.from_surface(scaled_object_picture)
-        self.screen.blit(scaled_object_picture, (draw_object.x, draw_object.y))
+        self.screen.blit(draw_object.picture, (draw_object.x, draw_object.y))
 
     def draw_spaceship_shield(self):
         if self.spaceship.is_immune() and self.spaceship.get_hp() > 0:
@@ -225,7 +228,8 @@ class App:
         i = 0
         while i < len(killable_objects):
             if killable_objects[i].hp <= 0:
-                if isinstance(killable_objects[i], Alien) or isinstance(killable_objects[i], Meteoroid):
+                if isinstance(killable_objects[i], Alien) or isinstance(killable_objects[i], Meteoroid) \
+                        or isinstance(killable_objects[i], Rocket):
                     self.trigger_explosion(killable_objects[i].x, killable_objects[i].y, killable_objects[i].width,
                                            killable_objects[i].height, 1.2)
                 elif isinstance(killable_objects[i], Rock):
@@ -259,6 +263,14 @@ class App:
                                              self.meteoroid_velocity))
             pos1 -= width
 
+    def spawn_rockets(self):
+        if len(self.rockets) <= 1:
+            self.rockets.append(Rocket(self.rocket_velocity, self.spaceship.get_width(), self.spaceship.get_height(),
+                                       self.rocket_x, self.rocket_y, self.images['rocket']))
+        elif len(self.rockets) <= 0 and random.random() < ROCKET_SPAWN_PROBABILITY:
+            self.rockets.append(Rocket(self.rocket_velocity, self.spaceship.get_width(), self.spaceship.get_height(),
+                                       self.rocket_x, self.rocket_y, self.images['rocket']))
+
     def space_ship_collisions(self, colliders):
         for collider in colliders:
             offset_x = self.spaceship.get_x() - collider.x
@@ -269,7 +281,7 @@ class App:
                     self.spaceship.set_immune()
                 if isinstance(collider, Laser):
                     collider.collided = True
-                elif isinstance(collider, Rock) or isinstance(collider, Meteoroid):
+                elif isinstance(collider, Rock) or isinstance(collider, Meteoroid) or isinstance(collider, Rocket):
                     collider.hp = 0
                 self.trigger_explosion(self.spaceship.get_x(), self.spaceship.get_y(), self.spaceship.get_width(),
                                        self.spaceship.get_height(), colliding_spaceship=self.spaceship)
@@ -318,6 +330,10 @@ class App:
                 self.non_space_ship_collisions(self.lasers, self.meteoroids)
                 self.eliminate_objects(self.meteoroids)
 
+            if len(self.rockets) > 0:
+                self.space_ship_collisions(self.rockets)
+                self.eliminate_objects(self.rockets)
+
             self.lasers = [laser for laser in self.lasers if not laser.above_screen() and not laser.get_collided()]
             self.alien_lasers = [alien_laser for alien_laser in self.alien_lasers
                                  if not alien_laser.below_screen(self.screen.get_height())
@@ -344,6 +360,9 @@ class App:
             self.explosions = [explosion for explosion in self.explosions if explosion.get_stage() <= 8]
             for meteoroid in self.meteoroids:
                 meteoroid.update_coordinates()
+            for rocket in self.rockets:
+                rocket.update_coordinates(self.screen.get_width(), self.screen.get_height())
+                rocket.return_at_border(self.screen.get_width(), self.screen.get_height())
 
             # After a Player took Damage he is immune for a short period of time
             if self.spaceship.is_immune():
@@ -390,16 +409,14 @@ class App:
             if self.game_phase == GamePhase.FIGHTING_ALIENS and len(self.aliens) == 0 and len(self.alien_lasers) == 0:
                 self.game_phase = GamePhase.METEOROIDS
 
-            if (self.game_phase == GamePhase.METEOROIDS and len(self.meteoroids) == 0
-                    and self.meteoroid_hail_counter <= self.meteoroid_phase_hail_amount):
+            if self.game_phase == GamePhase.METEOROIDS and len(self.meteoroids) == 0:
                 self.spawn_meteoroid_hail()
-                if self.meteoroid_hail_counter < 10:
-                    self.meteoroid_hail_counter += 1
-                else:
-                    self.game_phase = GamePhase.FINAL
+                self.meteoroid_hail_counter += 1
+                if self.meteoroid_hail_counter >= self.meteoroid_phase_hail_amount:
+                    self.game_phase = GamePhase.ROCKETS
 
-            if len(self.meteoroids) > 0:
-                self.space_ship_collisions(self.meteoroids)
+            if self.game_phase == GamePhase.ROCKETS and len(self.meteoroids) == 0:
+                self.spawn_rockets()
 
             # Draw everything
             self.reset_screen()
@@ -414,6 +431,8 @@ class App:
                 self.draw_health_bar(alien)
             for meteoroid in self.meteoroids:
                 self.draw_object(meteoroid)
+            for rocket in self.rockets:
+                self.draw_object(rocket)
             self.draw_object(self.spaceship)
             self.draw_spaceship_shield()
             for explosion in self.explosions:

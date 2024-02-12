@@ -46,6 +46,7 @@ def load_images() -> dict:
         'explosion8': pygame.image.load('resources/explosion8.png'),
         'meteoroid': pygame.image.load('resources/meteoroid.png'),
         'shield': pygame.image.load('resources/Shield.png'),
+        'rocket': pygame.image.load('resources/Rocket.png'),
     }
     return images
 

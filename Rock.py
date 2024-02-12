@@ -12,8 +12,9 @@ class Rock(Entity):
         self.height = size * (screen_height / 8)
         self.x = x - self.width * 0.5
         self.y = -self.height
-        self.surface = pygame.mask.from_surface(surface)
-        self.picture = surface
+
+        self.picture = pygame.transform.scale(surface, (self.width, self.height))
+        self.surface = pygame.mask.from_surface(self.picture)
 
         self.size = size
         self.hp = hp * size

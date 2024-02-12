@@ -11,8 +11,9 @@ class Meteoroid(Entity):
         self.height = screen_height / 2
         self.x = x
         self.y = -self.height
-        self.surface = pygame.mask.from_surface(surface)
-        self.picture = surface
+
+        self.picture = pygame.transform.scale(surface, (self.width, self.height))
+        self.surface = pygame.mask.from_surface(self.picture)
 
         self.hp = 1
         self.velocity = velocity

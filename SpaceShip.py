@@ -11,8 +11,9 @@ class SpaceShip(Entity):
         self.height = height * 0.1
         self.x = width * 0.5 - self.width * 0.5
         self.y = height * 0.8
-        self.picture = surface
-        self.surface = pygame.mask.from_surface(surface)
+
+        self.picture = pygame.transform.scale(surface, (self.width, self.height))
+        self.surface = pygame.mask.from_surface(self.picture)
 
         self.velocity = velocity
         self.shot_velocity = shot_velocity

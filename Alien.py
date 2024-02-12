@@ -12,11 +12,12 @@ class Alien(Entity):
         self.height = screen_height * 0.1
         self.x = self.assign_x_value(x, screen_width)
         self.y = -self.height
-        self.picture = surface
-        self.surface = pygame.mask.from_surface(surface)
+
+        self.picture = pygame.transform.scale(surface, (self.width, self.height))
+        self.surface = pygame.mask.from_surface(self.picture)
 
         self.max_hp = hp * 2
-        self.hp = self.max_hp
+        self.hp = self.max_hp * 0
 
         self.velocity = velocity
         self.shot_velocity = shot_velocity
