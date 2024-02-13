@@ -98,6 +98,7 @@ class App:
 
         self.mothership: Mothership = Mothership(self.screen.get_width(), self.screen.get_height(),
                                                  self.images['alien_spaceship'])
+        self.initialize_observer(self.mothership)
 
         self.clock = pygame.time.Clock()
         self.game_phase = GamePhase.ROCKS

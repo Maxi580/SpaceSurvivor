@@ -35,4 +35,4 @@ class Meteoroid(Entity):
         self.width *= (new_window_width / old_window_width)
         self.height *= (new_window_height / old_window_height)
         self.picture = pygame.transform.scale(self.picture, (self.width, self.height))
-        self.surface = pygame.mask.from_surface(self.picture)
+        self.surface = pygame.mask.from_surface(self.picture)d
