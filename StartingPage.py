@@ -278,6 +278,9 @@ class StartingPage:
                         app = App(self.images, self.screen, self.hp_difficulty_level[self.game_difficulty.value],
                                   self.velocity_difficulty_factor[self.game_difficulty.value])
                         app.run()
+                        self.adjust_values_to_resize()
+                        self.reset_screen()
+                        self.draw_overlay()
                     elif self.easy_button_x <= mouse_x <= (self.easy_button_x + self.difficulty_button_width) and \
                             self.difficulty_button_y <= mouse_y <= (self.difficulty_button_y +
                                                                     self.difficulty_button_height):
