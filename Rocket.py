@@ -57,7 +57,7 @@ class Rocket(Entity):
         self.surface = pygame.mask.from_surface(self.picture)
 
         self.x_velocity = random.uniform(-velocity, velocity)
-        self.y_velocity = sqrt(velocity**2 - self.x_velocity**2)
+        self.y_velocity = sqrt(velocity ** 2 - self.x_velocity ** 2)
         self.calculate_direction()
 
     def update_coordinates(self, width, height):
@@ -104,11 +104,14 @@ class Rocket(Entity):
         self.picture = pygame.transform.rotate(scaled_non_rotated_picture, angle_degrees)
         self.surface = pygame.mask.from_surface(self.picture)
 
-    def adjust_velocity_to_window_resize(self, old_window_width: int, old_window_height: int,
-                                         new_window_width: int, new_window_height: int):
+    def update_size(self, new_window_width: int, new_window_height: int,
+                    old_window_width: int, old_window_height: int):
+        self.x *= (new_window_width / old_window_width)
+        self.y *= (new_window_height / old_window_height)
 
         self.x_velocity *= (new_window_width / old_window_width)
         self.y_velocity *= (new_window_height / old_window_height)
 
-
-
+        self.width *= (new_window_width / old_window_width)
+        self.height *= (new_window_height / old_window_height)
+        self.picture = pygame.transform.scale(self.picture,(self.width, self.height))

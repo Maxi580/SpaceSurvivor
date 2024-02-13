@@ -15,6 +15,7 @@ from Explosion import Explosion
 from Laser import Laser
 from Meteoroid import Meteoroid
 from Mothership import Mothership
+from Observer import WindowResizeSubject, ResizeObserver
 from Rock import Rock
 from Rocket import Rocket
 from SpaceShip import SpaceShip
@@ -49,6 +50,7 @@ class App:
         self.screen = screen
         self.old_width = screen.get_width()
         self.old_height = screen.get_height()
+        self.resize_subject = WindowResizeSubject()
 
         self.green_color = [(0, 255, 0), (0, 128, 0)]
         self.red_color = [(255, 0, 0), (102, 0, 0)]
@@ -64,6 +66,8 @@ class App:
         self.spaceship: SpaceShip = SpaceShip(self.screen.get_width(), self.screen.get_height(),
                                               self.images['spaceship'], hp, self.ship_velocity,
                                               self.laser_velocity)
+        self.initialize_observer(self.spaceship, self.screen.get_width(), self.screen.get_height())
+
         self.key_to_attr = {pygame.K_a: 'LEFT',
                             pygame.K_w: 'UP',
                             pygame.K_s: 'DOWN',
@@ -107,39 +111,9 @@ class App:
         scaled_background = pygame.transform.scale(background, (self.screen.get_width(), self.screen.get_height()))
         self.screen.blit(scaled_background, (0, 0))
 
-    def update_screen_size(self):
-        self.adjust_size_to_window_resize(self.spaceship)
-        self.adjust_size_to_window_resize(self.mothership)
-        for alien in self.aliens:
-            self.adjust_size_to_window_resize(alien)
-
-        for laser in self.lasers:
-            self.adjust_size_to_window_resize(laser)
-
-        for meteoroid in self.meteoroids:
-            self.adjust_size_to_window_resize(meteoroid)
-
-        for rock in self.rocks:
-            self.adjust_size_to_window_resize(rock)
-        self.rock_velocity *= (self.screen.get_height() / self.old_height)
-        self.rock_stage_velocity_factor *= (self.screen.get_height() / self.old_height)
-
-        for explosion in self.explosions:
-            self.adjust_size_to_window_resize(explosion)
-        self.font_size = int(self.font_size * (self.screen.get_width() / self.old_width))
-
-    def adjust_size_to_window_resize(self, adjusted_object):
-        adjusted_object.x *= (self.screen.get_width() / self.old_width)
-        adjusted_object.y *= (self.screen.get_height() / self.old_height)
-
-        if not isinstance(adjusted_object, Explosion) and not isinstance(adjusted_object, Mothership):
-            adjusted_object.adjust_velocity_to_window_resize(self.old_width, self.old_height,
-                                                             self.screen.get_width(), self.screen.get_height())
-
-        adjusted_object.width *= (self.screen.get_width() / self.old_width)
-        adjusted_object.height *= (self.screen.get_height() / self.old_height)
-        adjusted_object.picture = pygame.transform.scale(adjusted_object.picture,
-                                                         (adjusted_object.width, adjusted_object.height))
+    def initialize_observer(self, entity, screen_width: int, screen_height: int):
+        resize_observer = ResizeObserver(entity, screen_width, screen_height)
+        self.resize_subject.attach(resize_observer)
 
     def draw_game_info(self, pos: tuple[float, float], text: str, colours: tuple[tuple[int, int, int],
                        tuple[int, int, int]]):
@@ -162,6 +136,7 @@ class App:
                           size_factor: float = 1, colliding_rock: Rock = None, colliding_spaceship: SpaceShip = None):
         self.explosions.append(Explosion(x, y, width, height,
                                          self.images['explosion1'], size_factor, colliding_rock, colliding_spaceship))
+        self.initialize_observer(self.explosions[-1], self.screen.get_width(), self.screen.get_height())
 
     def create_rock(self, x, size):
         surfaces = [self.images["smallRock100HP"], self.images["middleRock200HP"], self.images["bigRock300HP"]]
@@ -178,6 +153,7 @@ class App:
             else:
                 new_rock = self.create_rock(random.randint(0, self.screen.get_width()), 3)
             self.rocks.append(new_rock)
+            self.initialize_observer(new_rock, self.screen.get_width(), self.screen.get_height())
             self.rock_counter += 1
             self.rock_spawn_probability = self.rock_spawn_start_probability
         else:
@@ -231,6 +207,8 @@ class App:
         self.aliens.append(Alien(self.screen.get_width(), self.screen.get_width(), self.screen.get_height(),
                                  self.images["alien_spaceship"], self.ship_velocity,
                                  self.laser_velocity, self.ship_hp))
+        for alien in self.aliens:
+            self.initialize_observer(alien, self.screen.get_width(), self.screen.get_height())
 
     def eliminate_objects(self, killable_objects):
         i = 0
@@ -255,6 +233,7 @@ class App:
                                                alien.calculate_shot_velocity(self.spaceship.get_x(),
                                                                              self.spaceship.get_y()),
                                                self.images['alien_laser']))
+                self.initialize_observer(self.alien_lasers[-1], self.screen.get_width(), self.screen.get_height())
 
     def spawn_meteoroid_hail(self):
         pos1 = random.randint(0,
@@ -271,10 +250,14 @@ class App:
                                              self.meteoroid_velocity))
             pos1 -= width
 
+        for meteoroid in self.meteoroids:
+            self.initialize_observer(meteoroid, self.screen.get_width(), self.screen.get_height())
+
     def spawn_rockets(self):
         if len(self.rockets) < self.rocket_amount:
             self.rockets.append(Rocket(self.rocket_velocity, self.mothership.get_width(), self.mothership.get_height(),
                                        self.mothership.get_x(), self.mothership.get_y(), self.images['rocket']))
+            self.initialize_observer(self.rockets[-1], self.screen.get_width(), self.screen.get_height())
 
     def space_ship_collisions(self, colliders):
         for collider in colliders:
@@ -386,11 +369,12 @@ class App:
                     sys.exit()
                 elif event.type == pygame.VIDEORESIZE:
                     self.screen = pygame.display.set_mode((event.w, event.h), pygame.RESIZABLE)
-                    self.update_screen_size()
+                    self.resize_subject.notify(event)
                     self.old_width = self.screen.get_width()
                     self.old_height = self.screen.get_height()
                 elif event.type == pygame.MOUSEBUTTONDOWN and event.button == 1 and self.game_phase != GamePhase.ROCKETS:
                     self.lasers.append(self.spaceship.shoot(self.images["laser"]))
+                    self.initialize_observer(self.lasers[-1], self.screen.get_width(), self.screen.get_height())
                 elif event.type == pygame.KEYDOWN:
                     for key, direction in self.key_to_attr.items():
                         if event.key == key:

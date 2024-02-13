@@ -15,7 +15,9 @@ class SpaceShip(Entity):
         self.picture = pygame.transform.scale(surface, (self.width, self.height))
         self.surface = pygame.mask.from_surface(self.picture)
 
-        self.velocity = velocity
+        self.x_velocity = sqrt((velocity ** 2) / 2)
+        self.y_velocity = self.x_velocity
+
         self.shot_velocity = shot_velocity
         self.hp = hp
         self.movement_directions = {"left": False, "right": False, "up": False, "down": False}
@@ -25,31 +27,33 @@ class SpaceShip(Entity):
     def update_coordinates(self, screen_width: int, screen_height: int):
         movement_count = sum(self.movement_directions.values())
         if movement_count == 2:
-            vector_velocity = sqrt((self.velocity ** 2) / 2)
+            x_velocity = self.x_velocity
+            y_velocity = self.y_velocity
         else:
-            vector_velocity = self.velocity
+            x_velocity = sqrt(self.x_velocity**2 + self.y_velocity**2)
+            y_velocity = x_velocity
 
         if self.movement_directions.get("left"):
-            new_x_coordinate = self.x - vector_velocity
+            new_x_coordinate = self.x - x_velocity
             if new_x_coordinate > 0:
                 self.x = new_x_coordinate
             else:
                 self.x = 0
         if self.movement_directions.get("right"):
-            new_x_coordinate = self.x + vector_velocity
+            new_x_coordinate = self.x + x_velocity
             x_maximum = (screen_width - self.width)
             if new_x_coordinate < x_maximum:
                 self.x = new_x_coordinate
             else:
                 self.x = x_maximum
         if self.movement_directions.get("up"):
-            new_y_coordinate = self.y - vector_velocity
+            new_y_coordinate = self.y - y_velocity
             if new_y_coordinate > 0:
                 self.y = new_y_coordinate
             else:
                 self.y = 0
         if self.movement_directions.get("down"):
-            new_y_coordinate = self.y + vector_velocity
+            new_y_coordinate = self.y + y_velocity
             y_minimum = (screen_height - self.height)
             if new_y_coordinate < y_minimum:
                 self.y = new_y_coordinate
@@ -117,8 +121,16 @@ class SpaceShip(Entity):
     def reduce_hp(self, amount):
         self.hp -= amount
 
-    def adjust_velocity_to_window_resize(self, old_window_width: int, old_window_height: int,
-                                         new_window_width: int, new_window_height: int):
-        self.velocity *= (new_window_height / old_window_height)
-        self.shot_velocity *= (new_window_height / old_window_height)
+    def update_size(self, new_window_width: int, new_window_height: int,
+                    old_window_width: int, old_window_height: int):
+        self.x *= (new_window_width / old_window_width)
+        self.y *= (new_window_height / old_window_height)
+
+        self.x_velocity *= (new_window_width / old_window_width)
+        self.y_velocity *= (new_window_height / old_window_height)
+
+        self.width *= (new_window_width / old_window_width)
+        self.height *= (new_window_height / old_window_height)
+        self.picture = pygame.transform.scale(self.picture, (self.width, self.height))
+
 

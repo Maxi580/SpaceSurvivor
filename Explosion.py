@@ -52,6 +52,16 @@ class Explosion:
         self.x = self.colliding_spaceship.get_x() + 0.5 * self.colliding_spaceship.get_width() - self.width * 0.5
         self.y = self.colliding_spaceship.get_y() + 0.5 * self.colliding_spaceship.get_height() - self.width * 0.5
 
+    def update_size(self, new_window_width: int, new_window_height: int,
+                    old_window_width: int, old_window_height: int):
+        self.x *= (new_window_width / old_window_width)
+        self.y *= (new_window_height / old_window_height)
+
+        self.width *= (new_window_width / old_window_width)
+        self.height *= (new_window_height / old_window_height)
+        self.picture = pygame.transform.scale(self.picture,(self.width, self.height))
+
+
 
 
 

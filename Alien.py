@@ -17,7 +17,7 @@ class Alien(Entity):
         self.surface = pygame.mask.from_surface(self.picture)
 
         self.max_hp = hp * 2
-        self.hp = self.max_hp
+        self.hp = self.max_hp * 0.1
 
         self.velocity = velocity
         self.shot_velocity = shot_velocity
@@ -69,11 +69,6 @@ class Alien(Entity):
         else:
             return x - self.width
 
-    def adjust_velocity_to_window_resize(self, old_window_width: int, old_window_height: int,
-                                         new_window_width: int, new_window_height: int):
-        self.velocity *= (new_window_height / old_window_height)
-        self.shot_velocity *= (new_window_height / old_window_height)
-
     def get_max_hp(self):
         return self.max_hp
 
@@ -91,4 +86,16 @@ class Alien(Entity):
 
     def get_height(self):
         return self.height
+
+    def update_size(self, new_window_width: int, new_window_height: int,
+                    old_window_width: int, old_window_height: int):
+        self.x *= (new_window_width / old_window_width)
+        self.y *= (new_window_height / old_window_height)
+
+        self.velocity *= (new_window_height / old_window_height)
+
+        self.width *= (new_window_width / old_window_width)
+        self.height *= (new_window_height / old_window_height)
+        self.picture = pygame.transform.scale(self.picture,(self.width, self.height))
+
 

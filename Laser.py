@@ -37,10 +37,18 @@ class Laser(Entity):
     def below_screen(self, window_height: int) -> bool:
         return self.y > window_height
 
-    def adjust_velocity_to_window_resize(self, old_window_width: int, old_window_height: int,
-                                         new_window_width: int, new_window_height: int):
+    def get_collided(self):
+        return self.collided
+
+    def update_size(self, new_window_width: int, new_window_height: int,
+                    old_window_width: int, old_window_height: int):
+        self.x *= (new_window_width / old_window_width)
+        self.y *= (new_window_height / old_window_height)
+
         self.x_velocity *= (new_window_width / old_window_width)
         self.y_velocity *= (new_window_height / old_window_height)
 
-    def get_collided(self):
-        return self.collided
+        self.width *= (new_window_width / old_window_width)
+        self.height *= (new_window_height / old_window_height)
+        self.picture = pygame.transform.scale(self.picture,(self.width, self.height))
+

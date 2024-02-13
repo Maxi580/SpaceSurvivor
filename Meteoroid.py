@@ -25,6 +25,13 @@ class Meteoroid(Entity):
     def update_coordinates(self):
         self.y += self.velocity
 
-    def adjust_velocity_to_window_resize(self, old_window_width: int, old_window_height: int,
-                                         new_window_width: int, new_window_height: int):
+    def update_size(self, new_window_width: int, new_window_height: int,
+                    old_window_width: int, old_window_height: int):
+        self.x *= (new_window_width / old_window_width)
+        self.y *= (new_window_height / old_window_height)
+
         self.velocity *= (new_window_height / old_window_height)
+
+        self.width *= (new_window_width / old_window_width)
+        self.height *= (new_window_height / old_window_height)
+        self.picture = pygame.transform.scale(self.picture, (self.width, self.height))
