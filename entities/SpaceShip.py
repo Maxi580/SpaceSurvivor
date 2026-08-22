@@ -1,7 +1,7 @@
 import pygame
 from pygame import Surface
 from math import sqrt
-from Laser import Laser
+from entities.Laser import Laser
 from ObjectInterface import Entity
 
 

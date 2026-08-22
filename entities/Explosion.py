@@ -1,8 +1,8 @@
 import pygame
 from pygame import Surface
 
-from Rock import Rock
-from SpaceShip import SpaceShip
+from entities.Rock import Rock
+from entities.SpaceShip import SpaceShip
 
 
 class Explosion:

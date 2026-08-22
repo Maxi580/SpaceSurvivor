@@ -7,7 +7,7 @@ import pygame
 import pygame.freetype
 from win32api import GetSystemMetrics
 
-from app import App
+from Gameplay import Gameplay
 
 
 class Difficulty(Enum):
@@ -25,28 +25,28 @@ class SpaceshipCustomization(Enum):
 
 def load_images() -> dict:
     images = {
-        'background': pygame.image.load('resources/Background.jpg'),
+        'background': pygame.image.load('../resources/Background.jpg'),
         'spaceship': None,
-        'alien_spaceship': pygame.image.load('resources/AlienSpaceShip.png'),
+        'alien_spaceship': pygame.image.load('../resources/AlienSpaceShip.png'),
         'laser': None,
-        'alien_laser': pygame.image.load('resources/AlienLaser.png'),
-        'bigRock100HP': pygame.image.load('resources/bigRock100HP.png'),
-        'bigRock200HP': pygame.image.load('resources/bigRock200HP.png'),
-        'bigRock300HP': pygame.image.load('resources/bigRock300HP.png'),
-        'middleRock100HP': pygame.image.load('resources/middleRock100HP.png'),
-        'middleRock200HP': pygame.image.load('resources/middleRock200HP.png'),
-        'smallRock100HP': pygame.image.load('resources/smallRock100HP.png'),
-        'explosion1': pygame.image.load('resources/explosion1.png'),
-        'explosion2': pygame.image.load('resources/explosion2.png'),
-        'explosion3': pygame.image.load('resources/explosion3.png'),
-        'explosion4': pygame.image.load('resources/explosion4.png'),
-        'explosion5': pygame.image.load('resources/explosion5.png'),
-        'explosion6': pygame.image.load('resources/explosion6.png'),
-        'explosion7': pygame.image.load('resources/explosion7.png'),
-        'explosion8': pygame.image.load('resources/explosion8.png'),
-        'meteoroid': pygame.image.load('resources/meteoroid.png'),
-        'shield': pygame.image.load('resources/Shield.png'),
-        'rocket': pygame.image.load('resources/Rocket.png'),
+        'alien_laser': pygame.image.load('../resources/AlienLaser.png'),
+        'bigRock100HP': pygame.image.load('../resources/bigRock100HP.png'),
+        'bigRock200HP': pygame.image.load('../resources/bigRock200HP.png'),
+        'bigRock300HP': pygame.image.load('../resources/bigRock300HP.png'),
+        'middleRock100HP': pygame.image.load('../resources/middleRock100HP.png'),
+        'middleRock200HP': pygame.image.load('../resources/middleRock200HP.png'),
+        'smallRock100HP': pygame.image.load('../resources/smallRock100HP.png'),
+        'explosion1': pygame.image.load('../resources/explosion1.png'),
+        'explosion2': pygame.image.load('../resources/explosion2.png'),
+        'explosion3': pygame.image.load('../resources/explosion3.png'),
+        'explosion4': pygame.image.load('../resources/explosion4.png'),
+        'explosion5': pygame.image.load('../resources/explosion5.png'),
+        'explosion6': pygame.image.load('../resources/explosion6.png'),
+        'explosion7': pygame.image.load('../resources/explosion7.png'),
+        'explosion8': pygame.image.load('../resources/explosion8.png'),
+        'meteoroid': pygame.image.load('../resources/meteoroid.png'),
+        'shield': pygame.image.load('../resources/Shield.png'),
+        'rocket': pygame.image.load('../resources/Rocket.png'),
     }
     return images
 
@@ -78,16 +78,16 @@ class StartingPage:
         self.clock = pygame.time.Clock()
 
         self.customization_spaceships = [
-            pygame.image.load('resources/SpaceShip_green.png'),
-            pygame.image.load('resources/SpaceShip_blue.png'),
-            pygame.image.load('resources/SpaceShip_black.png'),
-            pygame.image.load('resources/SpaceShip_orange.png'),
+            pygame.image.load('../resources/SpaceShip_green.png'),
+            pygame.image.load('../resources/SpaceShip_blue.png'),
+            pygame.image.load('../resources/SpaceShip_black.png'),
+            pygame.image.load('../resources/SpaceShip_orange.png'),
         ]
         self.customization_lasers = [
-            pygame.image.load('resources/laser_green.png'),
-            pygame.image.load('resources/laser_blue.png'),
-            pygame.image.load('resources/laser_black.png'),
-            pygame.image.load('resources/laser_orange.png'),
+            pygame.image.load('../resources/laser_green.png'),
+            pygame.image.load('../resources/laser_blue.png'),
+            pygame.image.load('../resources/laser_black.png'),
+            pygame.image.load('../resources/laser_orange.png'),
         ]
 
         self.images = load_images()
@@ -275,8 +275,8 @@ class StartingPage:
                     if self.play_button_x <= mouse_x <= (self.play_button_x + self.play_button_width) and \
                             self.play_button_y <= mouse_y <= (self.play_button_y + self.play_button_height):
                         self.assign_customizable_images()
-                        app = App(self.images, self.screen, self.hp_difficulty_level[self.game_difficulty.value],
-                                  self.velocity_difficulty_factor[self.game_difficulty.value])
+                        app = Gameplay(self.images, self.screen, self.hp_difficulty_level[self.game_difficulty.value],
+                                       self.velocity_difficulty_factor[self.game_difficulty.value])
                         app.run()
                         self.adjust_values_to_resize()
                         self.reset_screen()
@@ -303,7 +303,3 @@ class StartingPage:
                     self.draw_overlay()
 
             pygame.display.update()
-
-
-starting_page = StartingPage()
-starting_page.run()

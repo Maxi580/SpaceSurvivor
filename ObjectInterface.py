@@ -1,8 +1,7 @@
-from abc import abstractmethod
-from msilib.schema import Property
+from abc import ABC, abstractmethod
 
 
-class Entity:
+class Entity(ABC):
     @abstractmethod
     def __init__(self):
         self.xy = "one"

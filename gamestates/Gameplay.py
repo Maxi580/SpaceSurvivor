@@ -1,4 +1,3 @@
-import math
 import random
 import sys
 from enum import Enum, auto
@@ -10,15 +9,15 @@ import utils
 import pygame
 import pygame.freetype
 
-from Alien import Alien
-from Explosion import Explosion
-from Laser import Laser
-from Meteoroid import Meteoroid
-from Mothership import Mothership
+from entities.Alien import Alien
+from entities.Explosion import Explosion
+from entities.Laser import Laser
+from entities.Meteoroid import Meteoroid
+from entities.Mothership import Mothership
 from Observer import WindowResizeSubject, ResizeObserver
-from Rock import Rock
-from Rocket import Rocket
-from SpaceShip import SpaceShip
+from entities.Rock import Rock
+from entities.Rocket import Rocket
+from entities.SpaceShip import SpaceShip
 
 ROCK_PROBABILITY = 0.0025
 METEOROID_GAP_FACTOR = 1.17
@@ -43,7 +42,7 @@ class GamePhase(Enum):
     ROCKETS = auto()
 
 
-class App:
+class Gameplay:
     def __init__(self, images: dict, screen: Surface | SurfaceType, hp: int, difficulty_factor: int):
         self.images = images
 
